@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "datalogger"
+version = "0.1.0"
+description = "Python package for logging data from scientific experiments."
+authors = ["Alex Hadley <alexhad6@gmail.com>"]
+license = "BSD-3-Clause"
+readme = "README.md"
+repository = "https://github.com/PainterQubits/datalogger"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "^1.25.0"
+xarray = "^2023.6.0"
+netcdf4 = "^1.6.4"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.4.1"
+flake8 = "^6.0.0"
+pylint = "^2.17.4"
+black = "^23.3.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

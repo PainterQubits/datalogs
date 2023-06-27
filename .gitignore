@@ -1,0 +1,11 @@
+# VS Code
+.vscode/
+
+# Misc
+.DS_Store
+
+# Python
+__pycache__/
+
+# Data files
+*.nc
