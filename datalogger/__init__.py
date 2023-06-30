@@ -1,5 +1,5 @@
 """Data logger for scientific experiments."""
 
-from datalogger._logger import save
+from datalogger._data_logger import DataLogger
 
-__all__ = ["save"]
+__all__ = ["DataLogger"]
