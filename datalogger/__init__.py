@@ -1,5 +1,9 @@
 """Data logger for scientific experiments."""
 
-from datalogger._data_logger import DataLogger
+from datalogger._loggers import DataLogger, GraphLogger, NodeLogger
 
-__all__ = ["DataLogger"]
+__all__ = [
+    "DataLogger",
+    "GraphLogger",
+    "NodeLogger",
+]
