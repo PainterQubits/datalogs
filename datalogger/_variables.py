@@ -1,62 +1,69 @@
-"""Classes to mirror """
+"""
+Wrappers for the Xarray ``Variable`` class to represent data and dimensional
+coordinates when creating data logs.
+"""
 
-from typing import cast
-import numpy as np
+from collections.abc import Sequence
+from numpy.typing import ArrayLike
 import xarray as xr
 
 
-class _Variable(xr.Variable):
-    pass
+class _Variable:
+    """Wrapper for an Xarray ``Variable``."""
+
+    # pylint: disable-next=too-many-arguments
+    def __init__(
+        self,
+        name: str,
+        dims: str | Sequence[str],
+        data: ArrayLike,
+        long_name: str | None = None,
+        units: str | None = None,
+    ) -> None:
+        self._name = name
+        attrs = {"long_name": long_name, "units": units}
+        self._variable = xr.Variable(dims, data, attrs)  # type: ignore
+
+    @property
+    def name(self) -> str:
+        """Name of this coordinate or data."""
+        return self._name
+
+    @property
+    def variable(self) -> xr.Variable:
+        """Underlying Xarray ``Variable`` object."""
+        return self._variable
 
 
-# pylint: disable-next=too-many-ancestors
-class Coord(xr.Variable):  # type: ignore
+class Coord(_Variable):
     """
-    Xarray ``Variable`` representing a coordinate in the dataset.
+    Wrapper for an Xarray ``Variable`` representing a dimensional coordinate.
 
-    This class inherits from the Xarray ``Variable`` class. See
-    https://docs.xarray.dev/en/latest/generated/xarray.Variable.html for documentation
-    on the properties, operations, and methods that can be used.
+    - ``name`` is used as the coordinate and dimension name.
+    - ``data`` should be a 1D array labeling points along the dimension.
+    - ``long_name`` and ``units`` are stored in the underlying variable's attribute
+      dictionary.
+
+    See https://docs.xarray.dev/en/stable/user-guide/data-structures.html#coordinates
+    for more information on coordinates in Xarray.
     """
 
     def __init__(
-        self, name: str, long_name: str, units: str, values: list[int]
+        self,
+        name: str,
+        data: ArrayLike,
+        long_name: str | None = None,
+        units: str | None = None,
     ) -> None:
-        """
-        Create an Xarray ``Variable`` representing a coordinate variable in the dataset.
-        The given name will also be used as the dimension name. The given ``long_name``
-        and ``units`` will be stored in the ``attrs`` dictionary.
-
-        See https://docs.xarray.dev/en/stable/user-guide/data-structures.html for more
-        information on coordinates.
-
-        This class inherits from the Xarray ``Variable`` class. See
-        https://docs.xarray.dev/en/latest/generated/xarray.Variable.html for
-        documentation on the properties, operations, and methods that can be used.
-        """
-        attrs = {"long_name": long_name, "units": units}
-        super().__init__(name, values, attrs)  # type: ignore
-
-    @property
-    def long_name(self) -> str:
-        return cast(str, self.attrs["long_name"])
-
-    @long_name.setter
-    def long_name(self, value: str) -> None:
-        self.attrs["long_name"] = value
-
-    @property
-    def units(self) -> str:
-        return cast(str, self.attrs["units"])
-
-    @units.setter
-    def units(self, value: str) -> None:
-        self.attrs["units"] = value
+        super().__init__(name, name, data, long_name, units)
 
 
-class DataVar(xr.Variable):  # type: ignore
-    """Data variable."""
+class DataVar(_Variable):
+    """
+    Wrapper for an Xarray ``Variable`` representing a data variable along particular
+    dimensions.
 
-    def __init__(self) -> None:
-        """Data variable."""
-        pass
+    - ``data`` should be an array that aligns with the named dimensions.
+    - ``long_name`` and ``units`` are stored in the underlying variable's attribute
+      dictionary.
+    """
