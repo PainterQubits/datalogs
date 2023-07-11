@@ -22,3 +22,4 @@ for i in range(5):
             "signal", dims="time", data=[10, 20, 30], long_name="Signal", units="V"
         )
         rabi_calibration_logger.log_data("rabi", [time], [signal])
+        rabi_calibration_logger.log_dict("rabi_fit", {"param1": 1, "param2": 2})

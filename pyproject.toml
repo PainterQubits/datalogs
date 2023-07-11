@@ -9,6 +9,7 @@ repository = "https://github.com/PainterQubits/datalogger"
 
 [tool.poetry.dependencies]
 python = "^3.10"
+typing-extensions = "^4.7.1"
 numpy = "^1.25.0"
 xarray = "^2023.6.0"
 netcdf4 = "^1.6.4"

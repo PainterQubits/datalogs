@@ -1,6 +1,6 @@
 """
 Wrappers for the Xarray ``Variable`` class to represent data and dimensional
-coordinates when creating data logs.
+coordinates when creating a data log.
 """
 
 from collections.abc import Sequence
@@ -31,7 +31,11 @@ class _Variable:
 
     @property
     def variable(self) -> xr.Variable:
-        """Underlying Xarray ``Variable`` object."""
+        """
+        Underlying Xarray ``Variable`` object.
+
+        See https://docs.xarray.dev/en/stable/generated/xarray.Variable.html.
+        """
         return self._variable
 
 

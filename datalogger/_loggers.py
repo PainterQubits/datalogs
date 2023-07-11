@@ -4,10 +4,11 @@ from __future__ import annotations
 from typing import Any
 from collections.abc import Sequence
 import os
-import time
-import xarray as xr
+import json
+from datetime import datetime, timezone
 from paramdb import ParamDB
 from datalogger._variables import Coord, DataVar
+from datalogger._logs import LogMetadata, DataLog
 
 
 class DataLogger:
@@ -122,9 +123,20 @@ class NodeLogger(GraphLogger):
     def directory(self) -> str:
         return os.path.join(super().directory, self.node_name)
 
-    def _log_path(self, description: str, commit_id: int, is_data_log: bool) -> str:
-        ext = "nc" if is_data_log else "json"
-        return os.path.join(self.directory, f"{commit_id}_{description}.{ext}")
+    def _log_metadata(self, description: str, commit_id: int) -> LogMetadata:
+        """
+        Metadata to store in the log file, including the given description and commit
+        ID.
+        """
+        return LogMetadata(
+            self._log_directory,
+            self.graph_name,
+            self.node_name,
+            commit_id,
+            description,
+            datetime.now(timezone.utc).astimezone(),
+            self._param_db.path,
+        )
 
     def log_data(
         self,
@@ -132,7 +144,7 @@ class NodeLogger(GraphLogger):
         coords: Coord | Sequence[Coord],
         data_vars: DataVar | Sequence[DataVar],
         commit_id: int | None = None,
-    ) -> xr.Dataset:
+    ) -> DataLog:
         """
         Construct an Xarray ``Dataset`` from the given data, save it in a NetCDF file,
         and return the ``Dataset``.
@@ -146,22 +158,26 @@ class NodeLogger(GraphLogger):
         and the ParamDB path.
         """
         commit_id = self._commit_id_or_latest(commit_id)
-        log_filename = self._log_path(description, commit_id, is_data_log=True)
-        if os.path.exists(log_filename):
-            raise FileExistsError(f"data log '{log_filename}' already exists")
-        coords = [coords] if isinstance(coords, Coord) else coords
-        data_vars = [data_vars] if isinstance(data_vars, DataVar) else data_vars
-        dataset = xr.Dataset(
-            data_vars={data_var.name: data_var.variable for data_var in data_vars},
-            coords={coord.name: coord.variable for coord in coords},
-            attrs={
-                "graph": self.graph_name,
-                "node": self.node_name,
-                "description": description,
-                "commit_id": commit_id,
-                "created_timestamp": time.time(),
-                "paramdb_path": os.path.abspath(self._param_db.path),
-            },
+        data_log = DataLog.from_variables(
+            self._log_metadata(description, commit_id), coords, data_vars
         )
-        dataset.to_netcdf(log_filename)
-        return dataset
+        data_log.save()
+        return data_log
+
+    def log_dict(
+        self, description: str, dict_data: dict[str, Any], commit_id: int | None = None
+    ) -> dict[str, Any]:
+        """
+        Save the given dictionary data in a JSON file, along with metadata containing
+        the graph and node names, the log description, the commit ID, the timestamp of
+        when this log was created, and the ParamDB path.
+        """
+        commit_id = self._commit_id_or_latest(commit_id)
+        log_path = self._log_path(description, commit_id, is_data_log=False)
+        dict_data_with_metadata = {
+            **dict_data,
+            "__metadata": self._log_metadata(description, commit_id),
+        }
+        with open(log_path, "x", encoding="utf-8") as f:
+            json.dump(dict_data_with_metadata, f, indent=2)
+        return dict_data_with_metadata
