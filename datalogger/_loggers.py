@@ -1,14 +1,17 @@
 """Data logging classes."""
 
 from __future__ import annotations
-from typing import Any
+from typing import TypeVar, Any, overload
 from collections.abc import Sequence
 import os
-import json
 from datetime import datetime, timezone
 from paramdb import ParamDB
 from datalogger._variables import Coord, DataVar
-from datalogger._logs import LogMetadata, DataLog
+from datalogger._logs import LogMetadata, DataLog, DictLog
+
+
+# Log type
+_LT = TypeVar("_LT", DataLog, DictLog)
 
 
 class DataLogger:
@@ -123,7 +126,7 @@ class NodeLogger(GraphLogger):
     def directory(self) -> str:
         return os.path.join(super().directory, self.node_name)
 
-    def _log_metadata(self, description: str, commit_id: int) -> LogMetadata:
+    def _log_metadata(self, description: str, commit_id: int | None) -> LogMetadata:
         """
         Metadata to store in the log file, including the given description and commit
         ID.
@@ -132,7 +135,7 @@ class NodeLogger(GraphLogger):
             self._log_directory,
             self.graph_name,
             self.node_name,
-            commit_id,
+            self._commit_id_or_latest(commit_id),
             description,
             datetime.now(timezone.utc).astimezone(),
             self._param_db.path,
@@ -146,18 +149,16 @@ class NodeLogger(GraphLogger):
         commit_id: int | None = None,
     ) -> DataLog:
         """
-        Construct an Xarray ``Dataset`` from the given data, save it in a NetCDF file,
-        and return the ``Dataset``.
+        Construct a :py:class:`DataLog` from the given data (which internally converts
+        the given :py:class:`Coord`s and :py:class:`DataVar`s into an Xarray
+        ``Dataset``), save it as a NetCDF file, and return the :py:class:`DataLog`.
+        Metadata, including the log directory, graph and node names, commit ID,
+        description, created timestamp, and ParamDB path, will also be saved.
 
         The filename will include the commit ID and the given description. If no commit
         ID is given, the latest commit ID at the time this function is called will be
         used.
-
-        The ``Dataset``'s attribute dictionary will contain the graph and node names,
-        the log description, the commit ID, the timestamp of when this log was created,
-        and the ParamDB path.
         """
-        commit_id = self._commit_id_or_latest(commit_id)
         data_log = DataLog.from_variables(
             self._log_metadata(description, commit_id), coords, data_vars
         )
@@ -166,18 +167,70 @@ class NodeLogger(GraphLogger):
 
     def log_dict(
         self, description: str, dict_data: dict[str, Any], commit_id: int | None = None
-    ) -> dict[str, Any]:
+    ) -> DictLog:
         """
         Save the given dictionary data in a JSON file, along with metadata containing
         the graph and node names, the log description, the commit ID, the timestamp of
         when this log was created, and the ParamDB path.
         """
-        commit_id = self._commit_id_or_latest(commit_id)
-        log_path = self._log_path(description, commit_id, is_data_log=False)
-        dict_data_with_metadata = {
-            **dict_data,
-            "__metadata": self._log_metadata(description, commit_id),
-        }
-        with open(log_path, "x", encoding="utf-8") as f:
-            json.dump(dict_data_with_metadata, f, indent=2)
-        return dict_data_with_metadata
+        dict_log = DictLog(self._log_metadata(description, commit_id), dict_data)
+        dict_log.save()
+        return dict_log
+
+    def _load_log(
+        self,
+        log_type: type[_LT],
+        path: str | None = None,
+        description: str | None = None,
+        commit_id: int | None = None,
+    ) -> _LT:
+        if path is not None:
+            return log_type.load(path)
+        if description is not None and commit_id is not None:
+            return log_type.load(self._log_metadata(description, commit_id))
+        raise TypeError(
+            "either a path or both a description and a commit ID must be specified to"
+            " load a log"
+        )
+
+    @overload
+    def load_data_log(self, *, path: str) -> DataLog:
+        ...
+
+    @overload
+    def load_data_log(self, *, description: str, commit_id: int) -> DataLog:
+        ...
+
+    def load_data_log(
+        self,
+        *,
+        path: str | None = None,
+        description: str | None = None,
+        commit_id: int | None = None,
+    ) -> DataLog:
+        """
+        Load a data log containing an Xarray ``Dataset`` from the NetCDF file (".nc")
+        specified by the given file path, or the given description and commit ID.
+        """
+        return self._load_log(DataLog, path, description, commit_id)
+
+    @overload
+    def load_dict_log(self, *, path: str) -> DictLog:
+        ...
+
+    @overload
+    def load_dict_log(self, *, description: str, commit_id: int) -> DictLog:
+        ...
+
+    def load_dict_log(
+        self,
+        *,
+        path: str | None = None,
+        description: str | None = None,
+        commit_id: int | None = None,
+    ) -> DictLog:
+        """
+        Load a dictionary log from the JSON file (".json") specified by the given file
+        path, or the given description and commit ID.
+        """
+        return self._load_log(DictLog, path, description, commit_id)

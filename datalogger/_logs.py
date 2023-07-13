@@ -7,11 +7,10 @@ from __future__ import annotations
 from typing import TypeVar, Generic, Any
 from collections.abc import Sequence
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, fields
 import os
 from datetime import datetime
-
-# import json
+import json
 from typing_extensions import Self
 import xarray as xr
 from datalogger._variables import Coord, DataVar
@@ -20,25 +19,39 @@ T = TypeVar("T")
 
 
 @dataclass
-class LogPathInfo:
-    """Metadata required to determine the path for a given log."""
+class LogMetadata:
+    """
+    Metadata for a log, including the log directory, graph and node names, commit ID,
+    description, created timestamp, and ParamDB path.
+    """
 
     log_directory: str
     graph: str
     node: str
     commit_id: int
     description: str
+    created_timestamp: datetime | None = None
+    paramdb_path: str | None = None
 
 
-@dataclass
-class LogMetadata(LogPathInfo):
-    """
-    Metadata for a log, including the required path information as well as the created
-    timestamp and ParamDB path.
-    """
+def _metadata_to_dict(metadata: LogMetadata, prefix: str = "") -> dict[str, Any]:
+    metadata_dict = {}
+    for field in fields(LogMetadata):
+        value = getattr(metadata, field.name)
+        if field.name == "created_timestamp" and isinstance(value, datetime):
+            value = value.isoformat()
+        metadata_dict[prefix + field.name] = value
+    return metadata_dict
 
-    created_timestamp: datetime
-    paramdb_path: str
+
+def _metadata_from_dict(metadata_dict: dict[Any, Any], prefix: str = "") -> LogMetadata:
+    metadata_kwargs = {}
+    for field in fields(LogMetadata):
+        value = metadata_dict.pop(prefix + field.name)
+        if field.name == "created_timestamp" and isinstance(value, str):
+            value = datetime.fromisoformat(value)
+        metadata_kwargs[field.name] = value
+    return LogMetadata(**metadata_kwargs)
 
 
 class _Log(ABC, Generic[T]):
@@ -50,56 +63,12 @@ class _Log(ABC, Generic[T]):
         super().__init_subclass__()
         cls._ext = ext
 
-    def __init__(self, metadata: LogPathInfo, data: T):
+    def __init__(self, metadata: LogMetadata, data: T):
         self._metadata = metadata
         self._data = data
 
-    @classmethod
-    @abstractmethod
-    def load(cls, path: str) -> Self:
-        """Load from the log file at the given path."""
-
-    @abstractmethod
-    def save(self) -> None:
-        """Save log to a file."""
-
-    # pylint: disable=too-many-arguments
-    def _get_path(
-        self,
-        log_directory: str,
-        graph_name: str,
-        node_name: str,
-        commit_id: int,
-        description: str,
-    ) -> str:
-        """
-        Path to the log file determined by the given log directory, graph and node
-        names, commit ID, description, and extension.
-        """
-        log_path = os.path.join(
-            log_directory,
-            graph_name,
-            node_name,
-            f"{commit_id}_{description}.{self._ext}",
-        )
-        if os.path.exists(log_path):
-            raise FileExistsError(f"log '{log_path}' already exists")
-        return log_path
-
     @property
-    def path(self) -> str:
-        """Path to the log file to save to."""
-        metadata = self._metadata
-        return self._get_path(
-            metadata.log_directory,
-            metadata.graph,
-            metadata.node,
-            metadata.commit_id,
-            metadata.description,
-        )
-
-    @property
-    def metadata(self) -> LogPathInfo:
+    def metadata(self) -> LogMetadata:
         """Metadata associated with this log."""
         return self._metadata
 
@@ -107,6 +76,47 @@ class _Log(ABC, Generic[T]):
     def data(self) -> T:
         """Data stored in this log."""
         return self._data
+
+    @classmethod
+    def _path(cls, metadata: LogMetadata) -> str:
+        """Path to the log file determined by the given metadata."""
+        log_path = os.path.join(
+            metadata.log_directory,
+            metadata.graph,
+            metadata.node,
+            f"{metadata.commit_id}_{metadata.description}.{cls._ext}",
+        )
+        return log_path
+
+    @property
+    def path(self) -> str:
+        """Path to the log file to save to."""
+        return self._path(self._metadata)
+
+    @abstractmethod
+    def _save(self, path: str) -> None:
+        ...
+
+    def save(self) -> None:
+        """Save log to a file."""
+        path = self.path
+        if os.path.exists(path):
+            raise FileExistsError(f"log '{path}' already exists")
+        self._save(path)
+
+    @classmethod
+    @abstractmethod
+    def _load(cls, path: str) -> Self:
+        ...
+
+    @classmethod
+    def load(cls, path_or_metadata: str | LogMetadata) -> Self:
+        """Load from the log file specified by the given path or metadata."""
+        return cls._load(
+            path_or_metadata
+            if isinstance(path_or_metadata, str)
+            else cls._path(path_or_metadata)
+        )
 
 
 class DataLog(_Log[xr.Dataset], ext="nc"):
@@ -136,17 +146,22 @@ class DataLog(_Log[xr.Dataset], ext="nc"):
         dataset = xr.Dataset(
             data_vars={data_var.name: data_var.variable for data_var in data_vars},
             coords={coord.name: coord.variable for coord in coords},
-            attrs=asdict(metadata),
         )
         return DataLog(metadata, dataset)
 
-    @classmethod
-    def load(cls, path: str) -> DataLog:
-        dataset = xr.open_dataset(path)
-        return DataLog(LogMetadata(**dataset.attrs), dataset)
+    def _save(self, path: str) -> None:
+        attrs_with_metadata = {
+            **self._dataset.attrs,
+            **_metadata_to_dict(self.metadata, prefix="__metadata_"),
+        }
+        dataset_with_metadata = self._dataset.assign_attrs(attrs_with_metadata)
+        dataset_with_metadata.to_netcdf(path)
 
-    def save(self) -> None:
-        self._dataset.to_netcdf(self.path)
+    @classmethod
+    def _load(cls, path: str) -> DataLog:
+        dataset = xr.open_dataset(path)
+        metadata = _metadata_from_dict(dataset.attrs, prefix="__metadata_")
+        return DataLog(metadata, dataset)
 
 
 class DictLog(_Log[dict[str, Any]], ext="json"):
@@ -158,11 +173,19 @@ class DictLog(_Log[dict[str, Any]], ext="json"):
         self._data_dict = data_dict
         super().__init__(metadata, data_dict)
 
+    def _save(self, path: str) -> None:
+        data_dict_with_metadata = {
+            **self.data,
+            "__metadata": _metadata_to_dict(self.metadata),
+        }
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data_dict_with_metadata, f, indent=2)
+
     @classmethod
-    def load(cls, path: str) -> DictLog:
-        with open(path, "r") as f:
+    def _load(cls, path: str) -> DictLog:
+        with open(path, "r", encoding="utf-8") as f:
             data_dict = json.load(f)
             if not isinstance(data_dict, dict):
                 raise TypeError("")
-        metadata = data_dict.pop("__metadata")
-        return DictLog(LogMetadata(**metadata), data_dict)
+        metadata = _metadata_from_dict(data_dict.pop("__metadata"))
+        return DictLog(metadata, data_dict)
