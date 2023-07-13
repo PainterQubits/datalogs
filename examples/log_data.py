@@ -13,9 +13,9 @@ param_db.commit("Commit 4", 104)
 param_db.commit("Commit 5", 105)
 
 for i in range(5):
-    graph_data_logger = data_logger.graph_logger("cross_entropy")
+    graph_logger = data_logger.graph("cross_entropy")
     for j in range(5):
-        node_data_logger = graph_data_logger.node_logger("rabi_calibration")
+        node_logger = graph_logger.node("rabi_calibration")
         param_db.commit("Commit", 10 * i + j)
-        node_data_logger.log("rabi")
-        node_data_logger.log("rabi_computed", analysis=True)
+        node_logger.log("rabi")
+        node_logger.log("rabi_computed", analysis=True)
