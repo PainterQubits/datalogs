@@ -7,6 +7,10 @@
 # Python
 __pycache__/
 
+# Sphinx
+docs/build/
+docs/jupyter_execute/
+
 # Data files
 *.db
 *.nc

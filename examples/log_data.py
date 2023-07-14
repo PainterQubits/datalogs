@@ -1,7 +1,7 @@
 """Example of saving data using DataLogger."""
 
 from paramdb import ParamDB
-from datalogger import Coord, DataVar, DataLogger
+from datalogger import Coord, DataVar, DataLogger, DictLog
 
 param_db = ParamDB[int]("qpu.db")
 data_logger = DataLogger(param_db, "data_logs")

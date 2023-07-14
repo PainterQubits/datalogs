@@ -61,8 +61,8 @@ class DataLogger:
 
 class GraphLogger(DataLogger):
     """
-    Logger associated with a particular graph that generates :py:class:`NodeLogger`s for
-    nodes within that graph.
+    Logger associated with a particular graph that generates :py:class:`NodeLogger`
+    objects for nodes within that graph.
 
     A description and commit ID are used to identify the graph. If no commit ID is
     given, the latest commit ID at the time this object is created will be used.
@@ -150,7 +150,7 @@ class NodeLogger(GraphLogger):
     ) -> DataLog:
         """
         Construct a :py:class:`DataLog` from the given data (which internally converts
-        the given :py:class:`Coord`s and :py:class:`DataVar`s into an Xarray
+        the given :py:class:`Coord` and :py:class:`DataVar` objects into an Xarray
         ``Dataset``), save it as a NetCDF file, and return the :py:class:`DataLog`.
         Metadata, including the log directory, graph and node names, commit ID,
         description, created timestamp, and ParamDB path, will also be saved.
