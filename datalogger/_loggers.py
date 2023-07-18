@@ -1,8 +1,9 @@
 """Data logging classes."""
 
 from __future__ import annotations
-from typing import TypeVar, Any, overload
+from typing import TypeVar, Any
 from collections.abc import Sequence
+from abc import ABC, abstractmethod
 import os
 from datetime import datetime, timezone
 from paramdb import ParamDB
@@ -14,17 +15,18 @@ from datalogger._logs import LogMetadata, DataLog, DictLog
 _LT = TypeVar("_LT", DataLog, DictLog)
 
 
-class DataLogger:
-    """
-    Base logger that generates :py:class:`GraphLogger` that use the given ParamDB and
-    log directory.
-    """
+# pylint: disable-next=too-few-public-methods
+class _Logger(ABC):
+    """Abstract base class for loggers."""
 
     def __init__(self, param_db: ParamDB[Any], log_directory: str) -> None:
         self._param_db = param_db
         self._log_directory = log_directory
-        if not os.path.exists(self.directory):
-            os.mkdir(self.directory)
+
+    @property
+    @abstractmethod
+    def directory(self) -> str:
+        """Directory where this logger saves subdirectories or files."""
 
     def _commit_id_or_latest(self, commit_id: int | None) -> int:
         """
@@ -41,9 +43,15 @@ class DataLogger:
             commit_id = latest_commit.id
         return commit_id
 
+
+class DataLogger(_Logger):
+    """
+    Logger to generate :py:class:`GraphLogger` using the given ParamDB and base
+    directory.
+    """
+
     @property
     def directory(self) -> str:
-        """Directory where this logger saves subdirectories or files."""
         return self._log_directory
 
     def graph_logger(
@@ -59,7 +67,7 @@ class DataLogger:
         return GraphLogger(self, description, commit_id)
 
 
-class GraphLogger(DataLogger):
+class GraphLogger(_Logger):
     """
     Logger associated with a particular graph that generates :py:class:`NodeLogger`s for
     nodes within that graph.
@@ -69,23 +77,14 @@ class GraphLogger(DataLogger):
     """
 
     def __init__(
-        self, parent: DataLogger, description: str, commit_id: int | None = None
+        self, data_logger: DataLogger, description: str, commit_id: int | None = None
     ) -> None:
-        self._graph_description = description
-        self._graph_commit_id = parent._commit_id_or_latest(commit_id)
-        super().__init__(parent._param_db, parent._log_directory)
-
-    @property
-    def graph_name(self) -> str:
-        """
-        Name of the graph, composed of the commit ID and description. Used for the graph
-        log directory and saved in each log's metadata.
-        """
-        return f"graph_{self._graph_commit_id}_{self._graph_description}"
+        super().__init__(data_logger._param_db, data_logger._log_directory)
+        self._graph_name = f"graph_{self._commit_id_or_latest(commit_id)}_{description}"
 
     @property
     def directory(self) -> str:
-        return os.path.join(super().directory, self.graph_name)
+        return os.path.join(self._log_directory, self._graph_name)
 
     def node_logger(self, description: str, commit_id: int | None = None) -> NodeLogger:
         """
@@ -98,7 +97,7 @@ class GraphLogger(DataLogger):
         return NodeLogger(self, description, commit_id)
 
 
-class NodeLogger(GraphLogger):
+class NodeLogger(_Logger):
     """
     Logger associated with a particular node that generates that generates log files
     within a directory for that node.
@@ -108,23 +107,15 @@ class NodeLogger(GraphLogger):
     """
 
     def __init__(
-        self, parent: GraphLogger, description: str, commit_id: int | None = None
+        self, graph_logger: GraphLogger, description: str, commit_id: int | None = None
     ) -> None:
-        self._node_description = description
-        self._node_commit_id = parent._commit_id_or_latest(commit_id)
-        super().__init__(parent, parent._graph_description, parent._graph_commit_id)
-
-    @property
-    def node_name(self) -> str:
-        """
-        Name of the node, composed of the commit ID and description. Used for the node
-        log directory and saved in each log's metadata.
-        """
-        return f"node_{self._node_commit_id}_{self._node_description}"
+        super().__init__(graph_logger._param_db, graph_logger._log_directory)
+        self._graph_name = graph_logger._graph_name
+        self._node_name = f"node_{self._commit_id_or_latest(commit_id)}_{description}"
 
     @property
     def directory(self) -> str:
-        return os.path.join(super().directory, self.node_name)
+        return os.path.join(self._log_directory, self._graph_name, self._node_name)
 
     def _log_metadata(self, description: str, commit_id: int | None) -> LogMetadata:
         """
@@ -133,13 +124,17 @@ class NodeLogger(GraphLogger):
         """
         return LogMetadata(
             self._log_directory,
-            self.graph_name,
-            self.node_name,
+            self._graph_name,
+            self._node_name,
             self._commit_id_or_latest(commit_id),
             description,
             datetime.now(timezone.utc).astimezone(),
             self._param_db.path,
         )
+
+    def _save_and_return(self, log: _LT) -> _LT:
+        log.save()
+        return log
 
     def log_data(
         self,
@@ -159,11 +154,11 @@ class NodeLogger(GraphLogger):
         ID is given, the latest commit ID at the time this function is called will be
         used.
         """
-        data_log = DataLog.from_variables(
-            self._log_metadata(description, commit_id), coords, data_vars
+        return self._save_and_return(
+            DataLog.from_variables(
+                self._log_metadata(description, commit_id), coords, data_vars
+            )
         )
-        data_log.save()
-        return data_log
 
     def log_dict(
         self, description: str, dict_data: dict[str, Any], commit_id: int | None = None
@@ -173,64 +168,6 @@ class NodeLogger(GraphLogger):
         the graph and node names, the log description, the commit ID, the timestamp of
         when this log was created, and the ParamDB path.
         """
-        dict_log = DictLog(self._log_metadata(description, commit_id), dict_data)
-        dict_log.save()
-        return dict_log
-
-    def _load_log(
-        self,
-        log_type: type[_LT],
-        path: str | None = None,
-        description: str | None = None,
-        commit_id: int | None = None,
-    ) -> _LT:
-        if path is not None:
-            return log_type.load(path)
-        if description is not None and commit_id is not None:
-            return log_type.load(self._log_metadata(description, commit_id))
-        raise TypeError(
-            "either a path or both a description and a commit ID must be specified to"
-            " load a log"
+        return self._save_and_return(
+            DictLog(self._log_metadata(description, commit_id), dict_data)
         )
-
-    @overload
-    def load_data_log(self, *, path: str) -> DataLog:
-        ...
-
-    @overload
-    def load_data_log(self, *, description: str, commit_id: int) -> DataLog:
-        ...
-
-    def load_data_log(
-        self,
-        *,
-        path: str | None = None,
-        description: str | None = None,
-        commit_id: int | None = None,
-    ) -> DataLog:
-        """
-        Load a data log containing an Xarray ``Dataset`` from the NetCDF file (".nc")
-        specified by the given file path, or the given description and commit ID.
-        """
-        return self._load_log(DataLog, path, description, commit_id)
-
-    @overload
-    def load_dict_log(self, *, path: str) -> DictLog:
-        ...
-
-    @overload
-    def load_dict_log(self, *, description: str, commit_id: int) -> DictLog:
-        ...
-
-    def load_dict_log(
-        self,
-        *,
-        path: str | None = None,
-        description: str | None = None,
-        commit_id: int | None = None,
-    ) -> DictLog:
-        """
-        Load a dictionary log from the JSON file (".json") specified by the given file
-        path, or the given description and commit ID.
-        """
-        return self._load_log(DictLog, path, description, commit_id)

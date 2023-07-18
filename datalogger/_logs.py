@@ -15,7 +15,7 @@ from typing_extensions import Self
 import xarray as xr
 from datalogger._variables import Coord, DataVar
 
-T = TypeVar("T")
+_T = TypeVar("_T")
 
 
 @dataclass
@@ -54,16 +54,16 @@ def _metadata_from_dict(metadata_dict: dict[Any, Any], prefix: str = "") -> LogM
     return LogMetadata(**metadata_kwargs)
 
 
-class _Log(ABC, Generic[T]):
+class _Log(ABC, Generic[_T]):
     """Abstract base class for logs."""
 
     _ext: str
 
     def __init_subclass__(cls, /, ext: str, *args: Any, **kwargs: Any) -> None:
-        super().__init_subclass__()
+        super().__init_subclass__(*args, **kwargs)
         cls._ext = ext
 
-    def __init__(self, metadata: LogMetadata, data: T):
+    def __init__(self, metadata: LogMetadata, data: _T):
         self._metadata = metadata
         self._data = data
 
@@ -73,7 +73,7 @@ class _Log(ABC, Generic[T]):
         return self._metadata
 
     @property
-    def data(self) -> T:
+    def data(self) -> _T:
         """Data stored in this log."""
         return self._data
 
