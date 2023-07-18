@@ -26,8 +26,8 @@ class LogMetadata:
     """
 
     log_directory: str
-    graph: str
-    node: str
+    graph_name: str
+    node_name: str
     commit_id: int
     description: str
     created_timestamp: datetime | None = None
@@ -82,8 +82,8 @@ class _Log(ABC, Generic[_T]):
         """Path to the log file determined by the given metadata."""
         log_path = os.path.join(
             metadata.log_directory,
-            metadata.graph,
-            metadata.node,
+            metadata.graph_name,
+            metadata.node_name,
             f"{metadata.commit_id}_{metadata.description}.{cls._ext}",
         )
         return log_path
@@ -165,9 +165,7 @@ class DataLog(_Log[xr.Dataset], ext="nc"):
 
 
 class DictLog(_Log[dict[str, Any]], ext="json"):
-    """
-    Log containing a dictionary which can be saved to a JSON (".json") file.
-    """
+    """Log containing a dictionary which can be saved to a JSON (".json") file."""
 
     def __init__(self, metadata: LogMetadata, data_dict: dict[str, Any]):
         self._data_dict = data_dict

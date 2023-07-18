@@ -1,10 +1,10 @@
-"""Example of saving data using DataLogger."""
+"""Example of saving data using RootLogger."""
 
 from paramdb import ParamDB
-from datalogger import Coord, DataVar, DataLogger
+from datalogger import Coord, DataVar, RootLogger, load_data_log, load_dict_log
 
 param_db = ParamDB[int]("qpu.db")
-data_logger = DataLogger(param_db, "data_logs")
+data_logger = RootLogger(param_db, "data_logs")
 
 param_db.commit("Commit 1", 101)
 param_db.commit("Commit 2", 102)
@@ -23,3 +23,5 @@ for i in range(5):
         )
         rabi_calibration_logger.log_data("rabi", [time], [signal])
         rabi_calibration_logger.log_dict("rabi_fit", {"param1": 1, "param2": 2})
+
+# data_log = load_data_log("data_logs/")
