@@ -1,7 +1,8 @@
-"""Example of saving data using RootLogger."""
+"""Example of saving and loading logs."""
 
+import os
 from paramdb import ParamDB
-from datalogger import Coord, DataVar, RootLogger, load_data_log, load_dict_log
+from datalogger import Coord, DataVar, RootLogger, load_log
 
 param_db = ParamDB[int]("qpu.db")
 data_logger = RootLogger(param_db, "data_logs")
@@ -24,4 +25,10 @@ for i in range(5):
         rabi_calibration_logger.log_data("rabi", [time], [signal])
         rabi_calibration_logger.log_dict("rabi_fit", {"param1": 1, "param2": 2})
 
-# data_log = load_data_log("data_logs/")
+root_dir = data_logger.directory
+graph_dir = os.path.join(root_dir, os.listdir(root_dir)[0])
+node_dir = os.path.join(graph_dir, os.listdir(graph_dir)[0])
+
+for log_path in os.listdir(node_dir):
+    log = load_log(os.path.join(node_dir, log_path))
+    print(log, end="\n\n")

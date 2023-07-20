@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from paramdb import ParamDB
 from datalogger._variables import Coord, DataVar
 from datalogger._logs import LogMetadata, DataLog, DictLog
+from datalogger._get_filename import get_filename
 
 
 # Log type
@@ -24,6 +25,46 @@ class _Logger(ABC):
     def directory(self) -> str:
         """Directory where this logger saves subdirectories or files."""
 
+    def _create_directory(self) -> None:
+        """Create the directory for this logger if it does not exist."""
+        if not os.path.exists(self.directory):
+            os.mkdir(self.directory)
+
+
+# pylint: disable-next=too-few-public-methods
+class _SubLogger(_Logger):
+    def __init__(self, description: str):
+        self._description = description
+        self._timestamp: datetime | None = None
+        self._name: str | None = None
+
+    @property
+    @abstractmethod
+    def _parent_directory(self) -> str:
+        """Directory of this sublogger's parent."""
+
+    @property
+    def name(self) -> str:
+        """Name of this graph, including the timestamp and description."""
+        if self._timestamp is None:
+            raise TypeError(
+                f"timestamp for '{self._description}' has not been generated"
+            )
+        if self._name is None:
+            self._name = get_filename(
+                self._parent_directory, self._timestamp, self._description
+            )
+        return self._name
+
+    @property
+    def directory(self) -> str:
+        return os.path.join(self._parent_directory, self.name)
+
+    def _set_timestamp(self, timestamp: datetime) -> None:
+        """Set the timestamp of this logger if it has not been set."""
+        if self._timestamp is None:
+            self._timestamp = timestamp
+
 
 class RootLogger(_Logger):
     """
@@ -33,66 +74,38 @@ class RootLogger(_Logger):
 
     def __init__(self, param_db: ParamDB[Any], log_directory: str) -> None:
         self._param_db = param_db
-        self._log_directory = log_directory
+        self._directory = log_directory
+        self._create_directory()
 
     @property
     def directory(self) -> str:
-        return self._log_directory
+        return self._directory
 
-    def graph_logger(
-        self, description: str, commit_id: int | None = None
-    ) -> GraphLogger:
-        """
-        Create a :py:class:`GraphLogger` for the graph specified by the given
-        description and commit ID.
-
-        If no commit ID is given, the commit ID of the first log created within this
-        graph will be used.
-        """
-        return GraphLogger(self, description, commit_id)
+    def graph_logger(self, description: str) -> GraphLogger:
+        """Create a new :py:class:`GraphLogger` with the given description."""
+        return GraphLogger(self, description)
 
 
-class GraphLogger(_Logger):
+class GraphLogger(_SubLogger):
     """
     Logger associated with a particular graph that generates :py:class:`NodeLogger`
     objects for nodes within that graph.
-
-    A description and commit ID are used to identify the graph. If no commit ID is
-    given, the commit ID of the first log created within this graph will be used.
     """
 
-    def __init__(
-        self, root_logger: RootLogger, description: str, commit_id: int | None = None
-    ) -> None:
+    def __init__(self, root_logger: RootLogger, description: str) -> None:
         self._root_logger = root_logger
-        self._description = description
-        self._commit_id = commit_id
+        super().__init__(description)
 
     @property
-    def name(self) -> str:
-        """Name of this graph, including the commit ID and description."""
-        if self._commit_id is None:
-            raise TypeError(
-                f"commit ID for graph '{self._description}' has not been set"
-            )
-        return f"graph_{self._commit_id}_{self._description}"
+    def _parent_directory(self) -> str:
+        return self._root_logger.directory
 
-    @property
-    def directory(self) -> str:
-        return os.path.join(self._root_logger.directory, self.name)
-
-    def node_logger(self, description: str, commit_id: int | None = None) -> NodeLogger:
-        """
-        Generate a :py:class:`NodeLogger` for the node specified by the given
-        description and commit ID.
-
-        If no commit ID is given, the commit ID of the first log created within this
-        graph will be used.
-        """
-        return NodeLogger(self, description, commit_id)
+    def node_logger(self, description: str) -> NodeLogger:
+        """Create a new :py:class:`NodeLogger` with the given description."""
+        return NodeLogger(self, description)
 
 
-class NodeLogger(_Logger):
+class NodeLogger(_SubLogger):
     """
     Logger associated with a particular node that generates that generates log files
     within a directory for that node.
@@ -101,26 +114,14 @@ class NodeLogger(_Logger):
     the commit ID of the first log created within this graph will be used.
     """
 
-    def __init__(
-        self, graph_logger: GraphLogger, description: str, commit_id: int | None = None
-    ) -> None:
+    def __init__(self, graph_logger: GraphLogger, description: str) -> None:
         self._root_logger = graph_logger._root_logger
         self._graph_logger = graph_logger
-        self._description = description
-        self._commit_id = commit_id
+        super().__init__(description)
 
     @property
-    def name(self) -> str:
-        """Name of this node, including the commit ID and description."""
-        if self._commit_id is None:
-            raise TypeError(
-                f"commit ID for node '{self._description}' has not been set"
-            )
-        return f"node_{self._commit_id}_{self._description}"
-
-    @property
-    def directory(self) -> str:
-        return os.path.join(self._graph_logger.directory, self.name)
+    def _parent_directory(self) -> str:
+        return self._graph_logger.directory
 
     def _log(
         self,
@@ -130,27 +131,33 @@ class NodeLogger(_Logger):
     ) -> _LT:
         """
         Create a log object using the given description, commit ID, and log creation
-        function. If no commit ID is given,
+        function. If no commit ID is given, the latest commit ID will be used.
         """
-        # pylint: disable=protected-access
+        param_db = self._root_logger._param_db  # pylint: disable=protected-access
         if commit_id is None:
-            latest_commit = self._root_logger._param_db.latest_commit
+            latest_commit = param_db.latest_commit
             if latest_commit is None:
                 raise IndexError(
                     "cannot tag log with most recent commit because ParamDB at"
-                    f" '{self._root_logger._param_db.path}' is empty"
+                    f" '{param_db.path}' is empty"
                 )
             commit_id = latest_commit.id
-        log_metadata = LogMetadata(
-            self._root_logger._log_directory,
-            self._graph_logger.name,
-            self.name,
-            commit_id,
-            description,
-            datetime.now(timezone.utc).astimezone(),
-            self._root_logger._param_db.path,
+        timestamp = datetime.now(timezone.utc).astimezone()
+        self._graph_logger._set_timestamp(timestamp)  # pylint: disable=protected-access
+        self._graph_logger._create_directory()  # pylint: disable=protected-access
+        self._set_timestamp(timestamp)
+        self._create_directory()
+        log = make_log(
+            LogMetadata(
+                log_directory=self._root_logger.directory,
+                graph_name=self._graph_logger.name,
+                node_name=self.name,
+                timestamp=timestamp,
+                description=description,
+                commit_id=commit_id,
+                paramdb_path=param_db.path,
+            )
         )
-        log = make_log(log_metadata)
         log.save()
         return log
 
