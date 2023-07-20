@@ -198,3 +198,10 @@ class NodeLogger(_SubLogger):
             return DictLog(log_metadata, dict_data)
 
         return self._log(make_log, description, commit_id)
+
+    def filepath(self, filename: str) -> str:
+        """
+        Generate a path to a file with the given name within the directory of this
+        :py:class:`NodeLogger`.
+        """
+        return os.path.join(self.directory, filename)
