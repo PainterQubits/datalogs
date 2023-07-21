@@ -52,7 +52,7 @@ class _SubLogger(_Logger):
             )
         if self._name is None:
             self._name = get_filename(
-                self._parent_directory, self._timestamp, self._description
+                self._parent_directory, self._description, timestamp=self._timestamp
             )
         return self._name
 
