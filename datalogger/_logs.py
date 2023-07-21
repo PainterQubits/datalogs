@@ -97,9 +97,7 @@ class _Log(ABC, Generic[_T]):
             )
             self._path = os.path.join(
                 directory,
-                get_filename(
-                    directory, metadata.timestamp, metadata.description, self._ext
-                ),
+                get_filename(directory, metadata.description, ext=self._ext),
             )
         return self._path
 
