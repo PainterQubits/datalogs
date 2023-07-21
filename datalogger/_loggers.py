@@ -52,7 +52,7 @@ class _SubLogger(_Logger):
             )
         if self._name is None:
             self._name = get_filename(
-                self._parent_directory, self._timestamp, self._description
+                self._parent_directory, self._description, timestamp=self._timestamp
             )
         return self._name
 
@@ -109,9 +109,6 @@ class NodeLogger(_SubLogger):
     """
     Logger associated with a particular node that generates that generates log files
     within a directory for that node.
-
-    A description and commit ID are used to identify the node. If no commit ID is given,
-    the commit ID of the first log created within this graph will be used.
     """
 
     def __init__(self, graph_logger: GraphLogger, description: str) -> None:
@@ -130,8 +127,8 @@ class NodeLogger(_SubLogger):
         commit_id: int | None = None,
     ) -> _LT:
         """
-        Create a log object using the given description, commit ID, and log creation
-        function. If no commit ID is given, the latest commit ID will be used.
+        Create a log object using the given log creation function, description, commit
+        ID. If no commit ID is given, the latest commit ID will be used.
         """
         param_db = self._root_logger._param_db  # pylint: disable=protected-access
         if commit_id is None:
@@ -169,15 +166,11 @@ class NodeLogger(_SubLogger):
         commit_id: int | None = None,
     ) -> DataLog:
         """
-        Construct a :py:class:`DataLog` from the given data (which internally converts
-        the given :py:class:`Coord`s and :py:class:`DataVar`s into an Xarray
-        ``Dataset``), save it as a NetCDF file, and return the :py:class:`DataLog`.
-        Metadata, including the log directory, graph and node names, commit ID,
-        description, created timestamp, and ParamDB path, will also be saved.
+        Construct an Xarray from the given data and corresponding metadata, save it in a
+        NetCDF file, and return a :py:class:`DataLog` with this data and metadata.
 
-        The filename will include the commit ID and the given description. If no commit
-        ID is given, the latest commit ID at the time this function is called will be
-        used.
+        The log will be tagged with the given commit ID, or the latest commit ID if none
+        is given.
         """
 
         def make_log(log_metadata: LogMetadata) -> DataLog:
@@ -189,9 +182,11 @@ class NodeLogger(_SubLogger):
         self, description: str, dict_data: dict[str, Any], commit_id: int | None = None
     ) -> DictLog:
         """
-        Save the given dictionary data in a JSON file, along with metadata containing
-        the graph and node names, the log description, the commit ID, the timestamp of
-        when this log was created, and the ParamDB path.
+        Save the given dictionary data and corresponding metadata in a JSON file, and
+        return a :py:class:`DictLog` with this data and metadata.
+
+        The log will be tagged with the given commit ID, or the latest commit ID if none
+        is given.
         """
 
         def make_log(log_metadata: LogMetadata) -> DictLog:
