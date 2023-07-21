@@ -109,9 +109,6 @@ class NodeLogger(_SubLogger):
     """
     Logger associated with a particular node that generates that generates log files
     within a directory for that node.
-
-    A description and commit ID are used to identify the node. If no commit ID is given,
-    the commit ID of the first log created within this graph will be used.
     """
 
     def __init__(self, graph_logger: GraphLogger, description: str) -> None:
