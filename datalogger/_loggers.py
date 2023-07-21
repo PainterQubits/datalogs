@@ -120,6 +120,13 @@ class NodeLogger(_SubLogger):
     def _parent_directory(self) -> str:
         return self._graph_logger.directory
 
+    def filepath(self, filename: str) -> str:
+        """
+        Generate a path to a file with the given name within the directory of this
+        :py:class:`NodeLogger`.
+        """
+        return os.path.join(self.directory, filename)
+
     def _log(
         self,
         make_log: Callable[[LogMetadata], _LT],
@@ -194,9 +201,30 @@ class NodeLogger(_SubLogger):
 
         return self._log(make_log, description, commit_id)
 
-    def filepath(self, filename: str) -> str:
+    @classmethod
+    def _should_save_prop(cls, prop: Any) -> bool:
         """
-        Generate a path to a file with the given name within the directory of this
-        :py:class:`NodeLogger`.
+        Whether the given object property should be saved. For now, this is checking
+        whether the given property can be saved as JSON.
         """
-        return os.path.join(self.directory, filename)
+        if isinstance(prop, (str, int, float, bool)) or prop is None:
+            return True
+        if isinstance(prop, (list, tuple)):
+            return all(cls._should_save_prop(p) for p in prop)
+        if isinstance(prop, dict):
+            return all(cls._should_save_prop(p) for p in prop.values())
+        return False
+
+    def log_props(
+        self, description: str, obj: Any, commit_id: int | None = None
+    ) -> DictLog:
+        """
+        Save a dictionary of the given object's properties and corresponding metadata in
+        a JSON file, and return a :py:class:`DictLog` with this data and metadata. Only
+        properties that can be parsed into JSON will be saved.
+
+        The log will be tagged with the given commit ID, or the latest commit ID if none
+        is given.
+        """
+        props = {k: v for k, v in vars(obj).items() if self._should_save_prop(v)}
+        return self.log_dict(description, props, commit_id)
