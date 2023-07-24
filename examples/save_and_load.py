@@ -5,7 +5,7 @@ from paramdb import ParamDB
 from datalogger import Coord, DataVar, RootLogger, load_log
 
 param_db = ParamDB[int]("qpu.db")
-data_logger = RootLogger(param_db, "data_logs")
+data_logger = RootLogger("data_logs", param_db)
 
 param_db.commit("Commit 1", 101)
 param_db.commit("Commit 2", 102)

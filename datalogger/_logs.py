@@ -33,8 +33,8 @@ class LogMetadata:
     node_name: str
     timestamp: datetime
     description: str
-    commit_id: int
-    paramdb_path: str
+    commit_id: int | None
+    paramdb_path: str | None
 
     def __repr__(self) -> str:
         field_values = ""
@@ -47,16 +47,20 @@ def _metadata_to_dict(metadata: LogMetadata, prefix: str = "") -> dict[str, Any]
     metadata_dict = {}
     for field in fields(LogMetadata):
         value = getattr(metadata, field.name)
-        if field.name == "timestamp" and isinstance(value, datetime):
-            value = value.isoformat()
-        metadata_dict[prefix + field.name] = value
+        if value is not None:
+            if field.name == "timestamp" and isinstance(value, datetime):
+                value = value.isoformat()
+            metadata_dict[prefix + field.name] = value
     return metadata_dict
 
 
 def _metadata_from_dict(metadata_dict: dict[Any, Any], prefix: str = "") -> LogMetadata:
     metadata_kwargs = {}
     for field in fields(LogMetadata):
-        value = metadata_dict.pop(prefix + field.name)
+        prefixed_name = prefix + field.name
+        value = (
+            metadata_dict.pop(prefixed_name) if prefixed_name in metadata_dict else None
+        )
         if field.name == "timestamp" and isinstance(value, str):
             value = datetime.fromisoformat(value)
         metadata_kwargs[field.name] = value
