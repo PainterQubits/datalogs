@@ -6,10 +6,17 @@ from collections.abc import Callable, Sequence
 from abc import ABC, abstractmethod
 import os
 from datetime import datetime, timezone
-from paramdb import ParamDB
+
 from datalogger._variables import Coord, DataVar
 from datalogger._logs import LogMetadata, DataLog, DictLog
 from datalogger._get_filename import get_filename
+
+try:
+    from paramdb import ParamDB
+
+    PARAMDB_INSTALLED = True
+except ImportError:
+    PARAMDB_INSTALLED = False
 
 
 # Log type
@@ -72,7 +79,9 @@ class RootLogger(_Logger):
     base directory.
     """
 
-    def __init__(self, param_db: ParamDB[Any], log_directory: str) -> None:
+    def __init__(
+        self, log_directory: str, param_db: ParamDB[Any] | None = None
+    ) -> None:
         self._param_db = param_db
         self._directory = log_directory
         self._create_directory()
@@ -138,7 +147,7 @@ class NodeLogger(_SubLogger):
         ID. If no commit ID is given, the latest commit ID will be used.
         """
         param_db = self._root_logger._param_db  # pylint: disable=protected-access
-        if commit_id is None:
+        if param_db is not None and commit_id is None:
             latest_commit = param_db.latest_commit
             if latest_commit is None:
                 raise IndexError(
@@ -159,7 +168,7 @@ class NodeLogger(_SubLogger):
                 timestamp=timestamp,
                 description=description,
                 commit_id=commit_id,
-                paramdb_path=param_db.path,
+                paramdb_path=param_db.path if param_db is not None else None,
             )
         )
         log.save()
