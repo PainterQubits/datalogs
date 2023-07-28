@@ -202,3 +202,31 @@ class NodeLogger(_SubLogger):
             return DictLog(log_metadata, dict_data)
 
         return self._log(make_log, description, commit_id)
+
+    @classmethod
+    def _should_save_prop(cls, prop: Any) -> bool:
+        """
+        Whether the given object property should be saved. For now, this is checking
+        whether the given property can be saved as JSON.
+        """
+        if isinstance(prop, (str, int, float, bool)) or prop is None:
+            return True
+        if isinstance(prop, (list, tuple)):
+            return all(cls._should_save_prop(p) for p in prop)
+        if isinstance(prop, dict):
+            return all(cls._should_save_prop(p) for p in prop.values())
+        return False
+
+    def log_props(
+        self, description: str, obj: Any, commit_id: int | None = None
+    ) -> DictLog:
+        """
+        Save a dictionary of the given object's properties and corresponding metadata in
+        a JSON file, and return a :py:class:`DictLog` with this data and metadata. Only
+        properties that can be parsed into JSON will be saved.
+
+        The log will be tagged with the given commit ID, or the latest commit ID if none
+        is given.
+        """
+        props = {k: v for k, v in vars(obj).items() if self._should_save_prop(v)}
+        return self.log_dict(description, props, commit_id)
