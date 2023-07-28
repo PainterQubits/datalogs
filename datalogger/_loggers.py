@@ -129,6 +129,13 @@ class NodeLogger(_SubLogger):
     def _parent_directory(self) -> str:
         return self._graph_logger.directory
 
+    def filepath(self, filename: str) -> str:
+        """
+        Generate a path to a file with the given name within the directory of this
+        :py:class:`NodeLogger`.
+        """
+        return os.path.join(self.directory, filename)
+
     def _log(
         self,
         make_log: Callable[[LogMetadata], _LT],
