@@ -6,7 +6,7 @@ from collections.abc import Callable, Sequence
 import os
 from datetime import datetime, timezone
 from datalogger._variables import Coord, DataVar
-from datalogger._logs import LogMetadata, DataLog, DictLog
+from datalogger._log import LogMetadata, DataLog, DictLog
 from datalogger._get_filename import get_filename
 
 try:
