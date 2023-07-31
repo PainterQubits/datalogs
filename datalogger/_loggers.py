@@ -1,12 +1,10 @@
 """Data logging classes."""
 
 from __future__ import annotations
-from typing import TypeVar, Any
+from typing import TypeVar, Any, overload
 from collections.abc import Callable, Sequence
-from abc import ABC, abstractmethod
 import os
 from datetime import datetime, timezone
-
 from datalogger._variables import Coord, DataVar
 from datalogger._logs import LogMetadata, DataLog, DictLog
 from datalogger._get_filename import get_filename
@@ -19,115 +17,84 @@ except ImportError:
     PARAMDB_INSTALLED = False
 
 
-# Log type
+# Log type variable
 _LT = TypeVar("_LT", DataLog, DictLog)
 
 
-# pylint: disable-next=too-few-public-methods
-class _Logger(ABC):
-    """Abstract base class for loggers."""
-
-    @property
-    @abstractmethod
-    def directory(self) -> str:
-        """Directory where this logger saves subdirectories or files."""
-
-    def _create_directory(self) -> None:
-        """Create the directory for this logger if it does not exist."""
-        if not os.path.exists(self.directory):
-            os.mkdir(self.directory)
+def _now() -> datetime:
+    """Return the current time as a ``datetime`` object in the current timezone."""
+    return datetime.now(timezone.utc).astimezone()
 
 
-# pylint: disable-next=too-few-public-methods
-class _SubLogger(_Logger):
-    def __init__(self, description: str):
-        self._description = description
-        self._timestamp: datetime | None = None
-        self._name: str | None = None
-
-    @property
-    @abstractmethod
-    def _parent_directory(self) -> str:
-        """Directory of this sublogger's parent."""
-
-    @property
-    def name(self) -> str:
-        """Name of this graph, including the timestamp and description."""
-        if self._timestamp is None:
-            raise TypeError(
-                f"timestamp for '{self._description}' has not been generated"
-            )
-        if self._name is None:
-            self._name = get_filename(
-                self._parent_directory, self._description, timestamp=self._timestamp
-            )
-        return self._name
-
-    @property
-    def directory(self) -> str:
-        return os.path.join(self._parent_directory, self.name)
-
-    def _set_timestamp(self, timestamp: datetime) -> None:
-        """Set the timestamp of this logger if it has not been set."""
-        if self._timestamp is None:
-            self._timestamp = timestamp
-
-
-class RootLogger(_Logger):
-    """
-    Logger that generates :py:class:`GraphLogger` objects that use the given ParamDB and
-    base directory.
-    """
-
-    def __init__(
-        self, log_directory: str, param_db: ParamDB[Any] | None = None
-    ) -> None:
-        self._param_db = param_db
-        self._directory = log_directory
-        self._create_directory()
-
-    @property
-    def directory(self) -> str:
-        return self._directory
-
-    def graph_logger(self, description: str) -> GraphLogger:
-        """Create a new :py:class:`GraphLogger` with the given description."""
-        return GraphLogger(self, description)
-
-
-class GraphLogger(_SubLogger):
+class Logger:
     """
     Logger associated with a particular graph that generates :py:class:`NodeLogger`
     objects for nodes within that graph.
+
+    If ``root_directory`` is given, that will be used as the directory, and this
+    :py:class:`Logger` will function as a root. Optionally, ``param_db`` can be given to
+    enable commit tagging.
+
+    Otherwise, ``parent`` and ``description`` must be given, and this :py:class:`Logger`
+    will use a subdirectory within the root directory.
     """
 
-    def __init__(self, root_logger: RootLogger, description: str) -> None:
-        self._root_logger = root_logger
-        super().__init__(description)
+    @overload
+    def __init__(
+        self, *, root_directory: str, param_db: ParamDB[Any] | None = None
+    ) -> None:
+        ...
+
+    @overload
+    def __init__(
+        self,
+        *,
+        parent: Logger,
+        description: str,
+    ) -> None:
+        ...
+
+    def __init__(
+        self,
+        *,
+        root_directory: str | None = None,
+        parent: Logger | None = None,
+        description: str | None = None,
+        param_db: ParamDB[Any] | None = None,
+    ) -> None:
+        self._name = root_directory
+        self._parent = parent
+        self._description = description
+        self._param_db: ParamDB[Any] | None = (
+            parent._param_db if parent is not None else param_db
+        )
+        if root_directory is not None:
+            self._create_directory()
 
     @property
-    def _parent_directory(self) -> str:
-        return self._root_logger.directory
+    def directory(self) -> str:
+        """Directory where this logger saves subdirectories or files."""
+        if self._name is None:
+            if self._parent is None:
+                raise TypeError(f"Logger '{self._description}' has no parent")
+            if self._description is None:
+                raise TypeError(f"Logger '{self._description}' has no description")
+            self._name = get_filename(
+                self._parent.directory,
+                self._description,
+                timestamp=_now(),
+            )
+        if self._parent is None:
+            return self._name
+        return os.path.join(self._parent.directory, self._name)
 
-    def node_logger(self, description: str) -> NodeLogger:
-        """Create a new :py:class:`NodeLogger` with the given description."""
-        return NodeLogger(self, description)
-
-
-class NodeLogger(_SubLogger):
-    """
-    Logger associated with a particular node that generates that generates log files
-    within a directory for that node.
-    """
-
-    def __init__(self, graph_logger: GraphLogger, description: str) -> None:
-        self._root_logger = graph_logger._root_logger
-        self._graph_logger = graph_logger
-        super().__init__(description)
-
-    @property
-    def _parent_directory(self) -> str:
-        return self._graph_logger.directory
+    def sub_logger(self, description: str) -> Logger:
+        """
+        Create a new sub :py:class:`Logger` with the given description. The new
+        :py:class:`Logger` will create logs and subdirectories within the directory of
+        the parent :py:class:`Logger`.
+        """
+        return Logger(parent=self, description=description)
 
     def filepath(self, filename: str) -> str:
         """
@@ -135,6 +102,13 @@ class NodeLogger(_SubLogger):
         :py:class:`NodeLogger`.
         """
         return os.path.join(self.directory, filename)
+
+    def _create_directory(self) -> None:
+        """Create the directory for this logger and its parents if they do not exist."""
+        if self._parent is not None:
+            self._parent._create_directory()  # pylint: disable=protected-access
+        if not os.path.exists(self.directory):
+            os.mkdir(self.directory)
 
     def _log(
         self,
@@ -146,29 +120,24 @@ class NodeLogger(_SubLogger):
         Create a log object using the given log creation function, description, commit
         ID. If no commit ID is given, the latest commit ID will be used.
         """
-        param_db = self._root_logger._param_db  # pylint: disable=protected-access
-        if param_db is not None and commit_id is None:
-            latest_commit = param_db.latest_commit
+        if self._param_db is not None and commit_id is None:
+            latest_commit = self._param_db.latest_commit
             if latest_commit is None:
                 raise IndexError(
                     "cannot tag log with most recent commit because ParamDB at"
-                    f" '{param_db.path}' is empty"
+                    f" '{self._param_db.path}' is empty"
                 )
             commit_id = latest_commit.id
-        timestamp = datetime.now(timezone.utc).astimezone()
-        self._graph_logger._set_timestamp(timestamp)  # pylint: disable=protected-access
-        self._graph_logger._create_directory()  # pylint: disable=protected-access
-        self._set_timestamp(timestamp)
         self._create_directory()
         log = make_log(
             LogMetadata(
-                log_directory=self._root_logger.directory,
-                graph_name=self._graph_logger.name,
-                node_name=self.name,
-                timestamp=timestamp,
+                directory=self.directory,
+                timestamp=_now(),
                 description=description,
                 commit_id=commit_id,
-                paramdb_path=param_db.path if param_db is not None else None,
+                param_db_path=(
+                    self._param_db.path if self._param_db is not None else None
+                ),
             )
         )
         log.save()

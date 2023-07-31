@@ -24,17 +24,15 @@ _T = TypeVar("_T")
 @dataclass
 class LogMetadata:
     """
-    Metadata for a log, including the log directory, graph and node names, commit ID,
-    description, created timestamp, and ParamDB path.
+    Metadata for a log, including the directory path, commit ID, description, created
+    timestamp, and ParamDB path.
     """
 
-    log_directory: str
-    graph_name: str
-    node_name: str
+    directory: str
     timestamp: datetime
     description: str
     commit_id: int | None
-    paramdb_path: str | None
+    param_db_path: str | None
 
     def __repr__(self) -> str:
         field_values = ""
@@ -95,13 +93,10 @@ class _Log(ABC, Generic[_T]):
     def path(self) -> str:
         """Path to the log file to save to."""
         if self._path is None:
-            metadata = self._metadata
-            directory = os.path.join(
-                metadata.log_directory, metadata.graph_name, metadata.node_name
-            )
+            directory = self._metadata.directory
             self._path = os.path.join(
                 directory,
-                get_filename(directory, metadata.description, ext=self._ext),
+                get_filename(directory, self._metadata.description, ext=self._ext),
             )
         return self._path
 
