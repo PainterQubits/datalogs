@@ -2,11 +2,11 @@
 
 import os
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 import pytest
 from datalogger._get_filename import get_filename
 
-TIMESTAMP_OBJ = datetime(2023, 7, 28, 13, 12, 34)
+TIMESTAMP_OBJ = datetime(2023, 7, 28, 13, 12, 34, 567890, timezone.utc)
 TIMESTAMP_STR = "23-07-28-1312"
 
 
