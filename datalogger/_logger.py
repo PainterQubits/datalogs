@@ -28,15 +28,15 @@ def _now() -> datetime:
 
 class Logger:
     """
-    Logger associated with a particular graph that generates :py:class:`NodeLogger`
-    objects for nodes within that graph.
+    Logger corresponding to a directory that generates log files and
+    sub-:py:class:`Logger` objects corresponding to subdirectories.
 
     If ``root_directory`` is given, that will be used as the directory, and this
     :py:class:`Logger` will function as a root. Optionally, ``param_db`` can be given to
     enable commit tagging.
 
     Otherwise, ``parent`` and ``description`` must be given, and this :py:class:`Logger`
-    will use a subdirectory within the root directory.
+    will correspond to a subdirectory within its parent's directory.
     """
 
     @overload
@@ -71,6 +71,13 @@ class Logger:
         if root_directory is not None:
             self._create_directory()
 
+    def sub_logger(self, description: str) -> Logger:
+        """
+        Create a new sub-:py:class:`Logger` with the given description corresponding to
+        a subdirectory within the parent :py:class:`Logger`.
+        """
+        return Logger(parent=self, description=description)
+
     @property
     def directory(self) -> str:
         """Directory where this logger saves subdirectories or files."""
@@ -88,18 +95,13 @@ class Logger:
             return self._name
         return os.path.join(self._parent.directory, self._name)
 
-    def sub_logger(self, description: str) -> Logger:
-        """
-        Create a new sub :py:class:`Logger` with the given description. The new
-        :py:class:`Logger` will create logs and subdirectories within the directory of
-        the parent :py:class:`Logger`.
-        """
-        return Logger(parent=self, description=description)
-
     def filepath(self, filename: str) -> str:
         """
-        Generate a path to a file with the given name within the directory of this
-        :py:class:`NodeLogger`.
+        Generate a path to a file or directory with the given name within the directory
+        of this :py:class:`Logger`.
+
+        Note that this simply generates the path, with no checks for whether a file or
+        directory with that path exists.
         """
         return os.path.join(self.directory, filename)
 
@@ -155,7 +157,7 @@ class Logger:
         NetCDF file, and return a :py:class:`DataLog` with this data and metadata.
 
         The log will be tagged with the given commit ID, or the latest commit ID if none
-        is given.
+        is given (and if this Logger has a corresponding ParamDB).
         """
 
         def make_log(log_metadata: LogMetadata) -> DataLog:
@@ -171,7 +173,7 @@ class Logger:
         return a :py:class:`DictLog` with this data and metadata.
 
         The log will be tagged with the given commit ID, or the latest commit ID if none
-        is given.
+        is given (and if this Logger has a corresponding ParamDB).
         """
 
         def make_log(log_metadata: LogMetadata) -> DictLog:
@@ -199,10 +201,10 @@ class Logger:
         """
         Save a dictionary of the given object's properties and corresponding metadata in
         a JSON file, and return a :py:class:`DictLog` with this data and metadata. Only
-        properties that can be parsed into JSON will be saved.
+        properties that can be converted directly to JSON will be saved.
 
         The log will be tagged with the given commit ID, or the latest commit ID if none
-        is given.
+        is given (and if this Logger has a corresponding ParamDB).
         """
         props = {k: v for k, v in vars(obj).items() if self._should_save_prop(v)}
         return self.log_dict(description, props, commit_id)
