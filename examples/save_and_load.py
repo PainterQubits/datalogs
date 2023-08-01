@@ -2,10 +2,10 @@
 
 import os
 from paramdb import ParamDB
-from datalogger import Coord, DataVar, RootLogger, load_log
+from datalogger import Coord, DataVar, Logger, load_log
 
 param_db = ParamDB[int]("qpu.db")
-data_logger = RootLogger("data_logs", param_db)
+data_logger = Logger(root_directory="data_logs", param_db=param_db)
 
 param_db.commit("Commit 1", 101)
 param_db.commit("Commit 2", 102)
@@ -14,9 +14,9 @@ param_db.commit("Commit 4", 104)
 param_db.commit("Commit 5", 105)
 
 for i in range(5):
-    graph_logger = data_logger.graph_logger("cross_entropy")
+    graph_logger = data_logger.sub_logger("cross_entropy")
     for j in range(5):
-        rabi_calibration_logger = graph_logger.node_logger("rabi_calibration")
+        rabi_calibration_logger = graph_logger.sub_logger("rabi_calibration")
         param_db.commit("Commit", 10 * i + j)
         time = Coord("time", data=[1, 2, 3], long_name="Time", units="s")
         signal = DataVar(
