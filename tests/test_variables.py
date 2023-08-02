@@ -2,22 +2,7 @@
 
 from numpy.testing import assert_array_equal
 import xarray as xr
-import pytest
 from datalogger._variables import Coord, DataVar
-
-
-@pytest.fixture(name="coord")
-def fixture_coord() -> Coord:
-    """Coord object."""
-    return Coord("time", data=[1, 2, 3], long_name="Time", units="s")
-
-
-@pytest.fixture(name="data_var")
-def fixture_data_var() -> DataVar:
-    """DataVar object."""
-    return DataVar(
-        "signal", dims="time", data=[10, 20, 30], long_name="Signal", units="V"
-    )
 
 
 def test_coord_name(coord: Coord) -> None:

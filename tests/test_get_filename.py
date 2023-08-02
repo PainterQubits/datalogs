@@ -1,25 +1,15 @@
 """Tests for datalogger._get_filename."""
 
 import os
-from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime
 import pytest
 from datalogger._get_filename import get_filename
-
-TIMESTAMP_OBJ = datetime(2023, 7, 28, 13, 12, 34, 567890, timezone.utc)
-TIMESTAMP_STR = "23-07-28-1312"
 
 
 def new_file(path: str) -> None:
     """Create a new blank file with the given path."""
     with open(path, "w", encoding="utf-8"):
         pass
-
-
-@pytest.fixture(name="cd_tempdir")
-def cd_tempdir(tmp_path: Path) -> None:
-    """Change to a temporary directory."""
-    os.chdir(tmp_path)
 
 
 @pytest.mark.usefixtures("cd_tempdir")
@@ -81,22 +71,21 @@ def test_extension() -> None:
 
 
 @pytest.mark.usefixtures("cd_tempdir")
-def test_timestamp() -> None:
+def test_timestamp(timestamp: datetime, timestamp_str_short: str) -> None:
     """Can generate unique file names with a timestamp."""
-    filename = f"{TIMESTAMP_STR}_file"
-    assert get_filename("", "file", timestamp=TIMESTAMP_OBJ) == filename
+    filename = f"{timestamp_str_short}_file"
+    assert get_filename("", "file", timestamp=timestamp) == filename
     new_file(filename)
-    assert get_filename("", "file", timestamp=TIMESTAMP_OBJ) == f"{filename}_1"
+    assert get_filename("", "file", timestamp=timestamp) == f"{filename}_1"
 
 
 @pytest.mark.usefixtures("cd_tempdir")
-def test_timestamp_and_extension() -> None:
+def test_timestamp_and_extension(timestamp: datetime, timestamp_str_short: str) -> None:
     """Can generate unique file names with an extension and timestamp."""
-    filename = f"{TIMESTAMP_STR}_file"
-    filename_with_ext = get_filename("", "file", timestamp=TIMESTAMP_OBJ, ext=".txt")
+    filename = f"{timestamp_str_short}_file"
+    filename_with_ext = get_filename("", "file", timestamp=timestamp, ext=".txt")
     assert filename_with_ext == f"{filename}.txt"
     new_file(filename_with_ext)
     assert (
-        get_filename("", "file", timestamp=TIMESTAMP_OBJ, ext=".txt")
-        == f"{filename}_1.txt"
+        get_filename("", "file", timestamp=timestamp, ext=".txt") == f"{filename}_1.txt"
     )
