@@ -102,7 +102,7 @@ class _Log(ABC, Generic[_T]):
         return self._path
 
     @abstractmethod
-    def _save(self, path: str) -> None:
+    def _save(self, path: str) -> None:  # pragma: no cover
         ...
 
     def save(self) -> None:
@@ -118,13 +118,12 @@ class _Log(ABC, Generic[_T]):
         """Load from the log file specified by the given path."""
 
     def __repr__(self) -> str:
-        indent_size = 2
         if isinstance(self.data, dict):
             data_repr = pprint.pformat(self.data, sort_dicts=False, compact=True)
         else:
             data_repr = repr(self.data)
-        data_repr = indent(data_repr, " " * indent_size)
-        metadata_repr = indent(repr(self.metadata), " " * indent_size)
+        data_repr = indent(data_repr, "  ")
+        metadata_repr = indent(repr(self.metadata), "  ")
         return (
             f"<{type(self).__name__} '{self.path}'>\n"
             f"Data:\n{data_repr}\n"
@@ -201,6 +200,6 @@ class DictLog(_Log[dict[str, Any]], ext=".json"):
         with open(path, "r", encoding="utf-8") as f:
             data_dict = json.load(f)
             if not isinstance(data_dict, dict):
-                raise TypeError("")
+                raise TypeError(f"'{path}' does not contain a dictionary")
         metadata = _metadata_from_dict(data_dict.pop("__metadata"))
         return DictLog(metadata, data_dict, path)

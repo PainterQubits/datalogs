@@ -4,6 +4,8 @@ from typing import Any
 import os
 from copy import deepcopy
 from datetime import datetime
+import json
+from textwrap import indent
 import xarray as xr
 import pytest
 from datalogger import Coord, DataVar
@@ -111,12 +113,33 @@ def test_log_path_unique(
 
 
 @pytest.mark.usefixtures("cd_tempdir")
+def test_log_save_exists_fails(log: DataLog | DictLog) -> None:
+    """Log fails to save if a file exists at the given path."""
+    os.mkdir(log.metadata.directory)
+    log.save()
+    with pytest.raises(FileExistsError) as exc_info:
+        log.save()
+    assert str(exc_info.value) == f"log '{log.path}' already exists"
+
+
+@pytest.mark.usefixtures("cd_tempdir")
 def test_log_save(log: DataLog | DictLog) -> None:
     """Logs can be saved to their path."""
     os.mkdir(log.metadata.directory)
     assert not os.path.exists(log.path)
     log.save()
     assert os.path.exists(log.path)
+
+
+@pytest.mark.usefixtures("cd_tempdir")
+def test_dict_log_load_not_dict_fails() -> None:
+    """DictLog fails to load from a JSON file that does not contain a dictionary."""
+    path = "test.json"
+    with open(path, "w", encoding="utf-8") as fp:
+        json.dump(123, fp)
+    with pytest.raises(TypeError) as exc_info:
+        DictLog.load(path)
+    assert str(exc_info.value) == f"'{path}' does not contain a dictionary"
 
 
 @pytest.mark.usefixtures("cd_tempdir")
@@ -130,3 +153,21 @@ def test_log_load(log_type: type[DataLog | DictLog], log: DataLog | DictLog) -> 
     assert loaded_log.metadata == log.metadata
     assert loaded_log.data == log.data
     assert loaded_log.path == log.path
+
+
+def test_log_repr(
+    log_type: type[DataLog | DictLog],
+    log: DataLog | DictLog,
+    log_metadata: LogMetadata,
+    data: xr.Dataset | dict[str, Any],
+) -> None:
+    """Converts a log to a ``repr`` string."""
+    assert (
+        repr(log)
+        == f"""\
+<{log_type.__name__} '{log.path}'>
+Data:
+{indent(repr(data), "  ")}
+Metadata:
+{indent(repr(log_metadata), "  ")}"""
+    )
