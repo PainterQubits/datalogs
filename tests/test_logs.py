@@ -7,9 +7,9 @@ from datetime import datetime
 import json
 from textwrap import indent
 import xarray as xr
+import xarray.testing
 import pytest
-from datalogger import Coord, DataVar
-from datalogger._logs import LogMetadata, DataLog, DictLog
+from datalogger import Coord, DataVar, LogMetadata, DataLog, DictLog
 
 
 def test_log_metadata_properties(
@@ -45,33 +45,12 @@ def test_log_metadata_equality(log_metadata: LogMetadata) -> None:
 
 
 def test_data_log_from_variables(
-    log_metadata: LogMetadata, xarray_data: xr.Dataset
+    log_metadata: LogMetadata, xarray_data: xr.Dataset, coord: Coord, data_var: DataVar
 ) -> None:
     """A DataLog can be constructed from variable objects."""
-    data_log = DataLog.from_variables(
-        log_metadata,
-        [
-            Coord(
-                str(name),
-                data=list(coord.data),
-                long_name=coord.attrs["long_name"],
-                units=coord.attrs["units"],
-            )
-            for name, coord in xarray_data.coords.items()
-        ],
-        [
-            DataVar(
-                str(name),
-                dims=[str(dim) for dim in data_var.dims],
-                data=list(data_var.data),
-                long_name=data_var.attrs["long_name"],
-                units=data_var.attrs["units"],
-            )
-            for name, data_var in xarray_data.data_vars.items()
-        ],
-    )
+    data_log = DataLog.from_variables(log_metadata, [coord], [data_var])
     assert data_log.metadata == log_metadata
-    assert data_log.data == xarray_data
+    xarray.testing.assert_identical(data_log.data, xarray_data)
 
 
 def test_log_metadata(log: DataLog | DictLog, log_metadata: LogMetadata) -> None:
@@ -81,7 +60,10 @@ def test_log_metadata(log: DataLog | DictLog, log_metadata: LogMetadata) -> None
 
 def test_log_data(log: DataLog | DictLog, data: xr.Dataset | dict[str, Any]) -> None:
     """Data can be retrieved from a log."""
-    assert log.data == data
+    if isinstance(data, xr.Dataset):
+        xarray.testing.assert_identical(log.data, data)
+    else:
+        assert log.data == data
 
 
 @pytest.mark.usefixtures("cd_tempdir")
@@ -151,7 +133,10 @@ def test_log_load(log_type: type[DataLog | DictLog], log: DataLog | DictLog) -> 
     log.save()
     loaded_log = log_type.load(log.path)
     assert loaded_log.metadata == log.metadata
-    assert loaded_log.data == log.data
+    if log_type is DataLog:
+        xarray.testing.assert_identical(loaded_log.data, log.data)
+    else:
+        assert loaded_log.data == log.data
     assert loaded_log.path == log.path
 
 

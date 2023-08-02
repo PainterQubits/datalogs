@@ -1,3 +1,5 @@
+"""Defines global fixtures. Called automatically by Pytest before running tests."""
+
 from typing import Any
 import os
 from pathlib import Path
@@ -64,13 +66,11 @@ def fixture_log_type(request: pytest.FixtureRequest) -> type[DataLog | DictLog]:
 
 
 @pytest.fixture(name="xarray_data")
-def fixture_xarray_data() -> xr.Dataset:
+def fixture_xarray_data(coord: Coord, data_var: DataVar) -> xr.Dataset:
     """Xarray data object."""
     return xr.Dataset(
-        data_vars={
-            "signal": ("time", [10, 20, 30], {"long_name": "Signal", "units": "V"})
-        },
-        coords={"time": ("time", [1, 2, 3], {"long_name": "Time", "units": "s"})},
+        data_vars={data_var.name: data_var.variable},
+        coords={coord.name: coord.variable},
     )
 
 

@@ -2,7 +2,7 @@
 
 from numpy.testing import assert_array_equal
 import xarray as xr
-from datalogger._variables import Coord, DataVar
+from datalogger import Coord, DataVar
 
 
 def test_coord_name(coord: Coord) -> None:
