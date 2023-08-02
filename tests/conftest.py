@@ -1,6 +1,8 @@
+from typing import Any
 import os
 from pathlib import Path
 from datetime import datetime, timezone
+import xarray as xr
 import pytest
 from datalogger import Coord, DataVar, LogMetadata, DataLog, DictLog
 
@@ -55,28 +57,56 @@ def fixture_log_metadata(timestamp: datetime) -> LogMetadata:
     )
 
 
-@pytest.fixture(name="data_log")
-def fixture_data_log(log_metadata: LogMetadata) -> DataLog:
-    """DataLog object."""
-    return DataLog.from_variables(
-        log_metadata,
-        [Coord("time", data=[1, 2, 3], long_name="Time", units="s")],
-        [
-            DataVar(
-                "signal", dims="time", data=[10, 20, 30], long_name="Signal", units="V"
-            )
-        ],
+@pytest.fixture(name="log_type", params=["DataLog", "DictLog"])
+def fixture_log_type(request: pytest.FixtureRequest) -> type[DataLog | DictLog]:
+    """Type of the log."""
+    return DataLog if request.param == "DataLog" else DictLog
+
+
+@pytest.fixture(name="xarray_data")
+def fixture_xarray_data() -> xr.Dataset:
+    """Xarray data object."""
+    return xr.Dataset(
+        data_vars={
+            "signal": ("time", [10, 20, 30], {"long_name": "Signal", "units": "V"})
+        },
+        coords={"time": ("time", [1, 2, 3], {"long_name": "Time", "units": "s"})},
     )
 
 
-@pytest.fixture(name="dict_log")
-def fixture_dict_log(log_metadata: LogMetadata) -> DictLog:
-    """DictLog object."""
-    return DictLog(log_metadata, {"param1": 123, "param2": 456})
+@pytest.fixture(name="dict_data")
+def fixture_dict_data() -> dict[str, Any]:
+    """Dictionary data object."""
+    return {"param1": 123, "param2": 456}
 
 
-@pytest.fixture(name="log", params=["data_log", "dict_log"])
-def fixture_log(request: pytest.FixtureRequest) -> DataLog | DictLog:
-    """DataLog or DictLog object."""
-    log: DataLog | DictLog = request.getfixturevalue(request.param)
-    return log
+@pytest.fixture(name="data")
+def fixture_data(
+    log_type: type[DataLog | DictLog],
+    xarray_data: xr.Dataset,
+    dict_data: dict[str, Any],
+) -> xr.Dataset | dict[str, Any]:
+    """Data object for the log."""
+    return xarray_data if log_type is DataLog else dict_data
+
+
+@pytest.fixture(name="log")
+def fixture_log(
+    log_type: type[DataLog | DictLog],
+    log_metadata: LogMetadata,
+    data: xr.Dataset | dict[str, Any],
+) -> DataLog:
+    """DataLog object."""
+    return log_type(log_metadata, data)  # type: ignore
+
+
+@pytest.fixture(name="log_path_prefix")
+def fixture_log_path_prefix(log_metadata: LogMetadata) -> str:
+    """Prefix of the log path."""
+    return os.path.join(log_metadata.directory, log_metadata.description)
+
+
+@pytest.fixture(name="log_ext")
+def fixture_log_ext(log_type: type[DataLog | DictLog]) -> str:
+    """Extension of the log object."""
+    return log_type._ext  # pylint: disable=protected-access

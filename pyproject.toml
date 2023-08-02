@@ -33,6 +33,10 @@ good-names-rgxs = ["^[a-z][a-z0-9]?$"]
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
+filterwarnings = [
+    # See https://github.com/pydata/xarray/issues/7259
+    "ignore:numpy.ndarray size changed, may indicate binary incompatibility. Expected 16 from C header, got 96 from PyObject",
+]
 
 [build-system]
 requires = ["poetry-core"]
