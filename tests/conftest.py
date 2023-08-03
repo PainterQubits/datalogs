@@ -1,16 +1,16 @@
 """Defines global fixtures. Called automatically by Pytest before running tests."""
 
-from typing import Any
+from typing import Any, cast
 import os
 from pathlib import Path
 from datetime import datetime, timezone
 import xarray as xr
 import pytest
-from datalogger import Coord, DataVar, LogMetadata, DataLog, DictLog
+from datalogger import Coord, DataVar, LogMetadata, DataLog, DictLog, Logger
 
 
 @pytest.fixture(name="cd_tempdir")
-def cd_tempdir(tmp_path: Path) -> None:
+def fixture_cd_tempdir(tmp_path: Path) -> None:
     """Change to a temporary directory."""
     os.chdir(tmp_path)
 
@@ -110,3 +110,28 @@ def fixture_log_path_prefix(log_metadata: LogMetadata) -> str:
 def fixture_log_ext(log_type: type[DataLog | DictLog]) -> str:
     """Extension of the log object."""
     return log_type._ext  # pylint: disable=protected-access
+
+
+@pytest.fixture(name="root_logger")
+# pylint: disable-next=unused-argument
+def fixture_root_logger(cd_tempdir: None) -> Logger:
+    """Root logger object."""
+    return Logger(root_directory="dir")
+
+
+@pytest.fixture(name="sub_logger")
+def fixture_sub_logger(root_logger: Logger) -> Logger:
+    """Sub-logger object."""
+    return root_logger.sub_logger("dir")
+
+
+@pytest.fixture(name="sub_sub_logger")
+def fixture_sub_sub_logger(sub_logger: Logger) -> Logger:
+    """Sub-sub-logger object."""
+    return sub_logger.sub_logger("dir")
+
+
+@pytest.fixture(name="logger", params=["root_logger", "sub_logger", "sub_sub_logger"])
+def fixture_logger(request: pytest.FixtureRequest) -> Logger:
+    """Logger object."""
+    return cast(Logger, request.getfixturevalue(request.param))

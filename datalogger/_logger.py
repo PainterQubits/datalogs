@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from typing import TypeVar, Any, overload
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Sequence, Collection, Mapping
 import os
 from datetime import datetime, timezone
 from datalogger._variables import Coord, DataVar
@@ -182,29 +182,34 @@ class Logger:
         return self._log(make_log, description, commit_id)
 
     @classmethod
-    def _should_save_prop(cls, prop: Any) -> bool:
+    def _convert_to_json(cls, obj: Any) -> Any:
         """
-        Whether the given object property should be saved. For now, this is checking
-        whether the given property can be saved as JSON.
+        Return a JSON-serializable version of the given object by converting ``Mapping``
+        and ``Collection`` objects to dictionaries and lists, converting other
+        non-JSON-serializable values to ``repr`` strings, and converting all dictionary
+        keys to strings.
         """
-        if isinstance(prop, (str, int, float, bool)) or prop is None:
-            return True
-        if isinstance(prop, (list, tuple)):
-            return all(cls._should_save_prop(p) for p in prop)
-        if isinstance(prop, dict):
-            return all(cls._should_save_prop(p) for p in prop.values())
-        return False
+        if isinstance(obj, (str, int, float, bool)) or obj is None:
+            return obj
+        if isinstance(obj, Mapping):
+            return {str(k): cls._convert_to_json(v) for k, v in obj.items()}
+        if isinstance(obj, Collection):
+            return [cls._convert_to_json(v) for v in obj]
+        return repr(obj)
 
     def log_props(
         self, description: str, obj: Any, commit_id: int | None = None
     ) -> DictLog:
         """
         Save a dictionary of the given object's properties and corresponding metadata in
-        a JSON file, and return a :py:class:`DictLog` with this data and metadata. Only
-        properties that can be converted directly to JSON will be saved.
+        a JSON file, and return a :py:class:`DictLog` with this data and metadata.
+
+        This function will attempt to convert values that are not JSON-serializable to
+        lists or dictionaries, and otherwise will convert them to string
+        representations. This is intended to save a snapshot of the current properties
+        of the given object, but makes no guarentees that all information is saved.
 
         The log will be tagged with the given commit ID, or the latest commit ID if none
         is given (and if this Logger has a corresponding ParamDB).
         """
-        props = {k: v for k, v in vars(obj).items() if self._should_save_prop(v)}
-        return self.log_dict(description, props, commit_id)
+        return self.log_dict(description, self._convert_to_json(vars(obj)), commit_id)
