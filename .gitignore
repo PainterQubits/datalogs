@@ -4,6 +4,9 @@
 # Misc
 .DS_Store
 
+# Build
+dist/
+
 # Python
 __pycache__/
 

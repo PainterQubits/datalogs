@@ -1,8 +1,9 @@
 """Data logger for scientific experiments."""
 
 from datalogger._variables import Coord, DataVar
-from datalogger._logs import LogMetadata, DataLog, DictLog
-from datalogger._loggers import DataLogger, GraphLogger, NodeLogger
+from datalogger._log import LogMetadata, DataLog, DictLog
+from datalogger._logger import Logger
+from datalogger._load_log import load_log
 
 __all__ = [
     "Coord",
@@ -10,7 +11,6 @@ __all__ = [
     "LogMetadata",
     "DataLog",
     "DictLog",
-    "DataLogger",
-    "GraphLogger",
-    "NodeLogger",
+    "Logger",
+    "load_log",
 ]
