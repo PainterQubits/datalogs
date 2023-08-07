@@ -42,7 +42,7 @@ class Logger:
     @overload
     def __init__(
         self, *, root_directory: str, param_db: ParamDB[Any] | None = None
-    ) -> None:
+    ) -> None:  # pragma: no cover
         ...
 
     @overload
@@ -51,7 +51,7 @@ class Logger:
         *,
         parent: Logger,
         description: str,
-    ) -> None:
+    ) -> None:  # pragma: no cover
         ...
 
     def __init__(
@@ -62,6 +62,18 @@ class Logger:
         description: str | None = None,
         param_db: ParamDB[Any] | None = None,
     ) -> None:
+        if root_directory is None:
+            if parent is None:
+                raise TypeError("Logger with no root_directory must have a parent")
+            if description is None:
+                raise TypeError("Logger with no root_directory must have a description")
+        else:
+            if parent is not None:
+                raise TypeError("Logger with a root_directory cannot have a parent")
+            if description is not None:
+                raise TypeError(
+                    "Logger with a root_directory cannot have a description"
+                )
         self._name = root_directory
         self._parent = parent
         self._description = description
@@ -82,10 +94,10 @@ class Logger:
     def directory(self) -> str:
         """Directory where this logger saves subdirectories or files."""
         if self._name is None:
-            if self._parent is None:
-                raise TypeError(f"Logger '{self._description}' has no parent")
-            if self._description is None:
-                raise TypeError(f"Logger '{self._description}' has no description")
+            # If self._name is None, both self._parent and self._description should have
+            # been defined in self.__init__().
+            assert self._parent is not None, "sub-Logger must have a parent"
+            assert self._description is not None, "sub-Logger must have a description"
             self._name = get_filename(
                 self._parent.directory,
                 self._description,
@@ -126,8 +138,8 @@ class Logger:
             latest_commit = self._param_db.latest_commit
             if latest_commit is None:
                 raise IndexError(
-                    "cannot tag log with most recent commit because ParamDB at"
-                    f" '{self._param_db.path}' is empty"
+                    f"cannot tag log '{description}' with most recent commit because"
+                    f" ParamDB '{self._param_db.path}' is empty"
                 )
             commit_id = latest_commit.id
         self._create_directory()
@@ -202,7 +214,8 @@ class Logger:
     ) -> DictLog:
         """
         Save a dictionary of the given object's properties and corresponding metadata in
-        a JSON file, and return a :py:class:`DictLog` with this data and metadata.
+        a JSON file, and return a :py:class:`DictLog` with this data and metadata. The
+        object must be one with properties (i.e. one that has a ``__dict__`` property).
 
         This function will attempt to convert values that are not JSON-serializable to
         lists or dictionaries, and otherwise will convert them to string
@@ -212,4 +225,10 @@ class Logger:
         The log will be tagged with the given commit ID, or the latest commit ID if none
         is given (and if this Logger has a corresponding ParamDB).
         """
-        return self.log_dict(description, self._convert_to_json(vars(obj)), commit_id)
+        try:
+            obj_vars = vars(obj)
+        except TypeError as exc:
+            raise TypeError(
+                f"'{type(obj).__name__}' object is not supported by log_props"
+            ) from exc
+        return self.log_dict(description, self._convert_to_json(obj_vars), commit_id)

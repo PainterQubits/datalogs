@@ -6,6 +6,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 import xarray as xr
 import pytest
+from paramdb import ParamDB
 from datalogger import Coord, DataVar, LogMetadata, DataLog, DictLog, Logger
 
 
@@ -122,16 +123,27 @@ def fixture_root_logger(cd_tempdir: None) -> Logger:
 @pytest.fixture(name="sub_logger")
 def fixture_sub_logger(root_logger: Logger) -> Logger:
     """Sub-logger object."""
-    return root_logger.sub_logger("dir")
+    return root_logger.sub_logger("sub_logger")
 
 
 @pytest.fixture(name="sub_sub_logger")
 def fixture_sub_sub_logger(sub_logger: Logger) -> Logger:
     """Sub-sub-logger object."""
-    return sub_logger.sub_logger("dir")
+    return sub_logger.sub_logger("sub_sub_logger")
 
 
 @pytest.fixture(name="logger", params=["root_logger", "sub_logger", "sub_sub_logger"])
 def fixture_logger(request: pytest.FixtureRequest) -> Logger:
     """Logger object."""
     return cast(Logger, request.getfixturevalue(request.param))
+
+
+@pytest.fixture(name="param_db")
+# pylint: disable-next=unused-argument
+def fixture_paramdb(cd_tempdir: None) -> ParamDB[Any]:
+    """A ParamDB with a few commits."""
+    param_db = ParamDB[Any]("param.db")
+    param_db.commit("Initial commit", "test1")
+    param_db.commit("Commit 2", "test2")
+    param_db.commit("Commit 3", "test3")
+    return param_db

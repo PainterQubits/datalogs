@@ -184,6 +184,11 @@ class DictLog(_Log[dict[str, Any]], ext=".json"):
     def __init__(
         self, metadata: LogMetadata, data_dict: dict[str, Any], path: str | None = None
     ):
+        if not isinstance(data_dict, dict):
+            raise TypeError(
+                f"'{type(data_dict).__name__}' data given for dict log"
+                f" '{metadata.description}'"
+            )
         self._data_dict = data_dict
         super().__init__(metadata, data_dict, path)
 
