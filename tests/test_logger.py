@@ -22,16 +22,16 @@ class Obj:
 
 def test_root_logger_parent_fails() -> None:
     """A root Logger fails to be defined with a parent."""
-    logger = Logger(root_directory="dir")
+    logger = Logger("dir")
     with pytest.raises(TypeError) as exc_info:
-        Logger(root_directory="dir", parent=logger)  # type: ignore
+        Logger("dir", parent=logger)  # type: ignore
     assert str(exc_info.value) == "Logger with a root_directory cannot have a parent"
 
 
 def test_root_logger_description_fails() -> None:
     """A root Logger fails to be defined with a description."""
     with pytest.raises(TypeError) as exc_info:
-        Logger(root_directory="dir", description="test")  # type: ignore
+        Logger("dir", description="test")  # type: ignore
     assert (
         str(exc_info.value) == "Logger with a root_directory cannot have a description"
     )
@@ -46,7 +46,7 @@ def test_sub_logger_no_parent_fails() -> None:
 
 def test_sub_logger_no_description_fails() -> None:
     """A sub-Logger fails to be defined without a description."""
-    logger = Logger(root_directory="dir")
+    logger = Logger("dir")
     with pytest.raises(TypeError) as exc_info:
         Logger(parent=logger)  # type: ignore
     assert (
@@ -58,7 +58,7 @@ def test_sub_logger_no_description_fails() -> None:
 def test_root_logger_creates_directory() -> None:
     """A root Logger creates its directory when it is defined."""
     assert not os.path.exists("dir")
-    Logger(root_directory="dir")
+    Logger("dir")
     assert os.path.exists("dir")
 
 
@@ -212,7 +212,7 @@ def test_log_props(
 def test_log_empty_paramdb_latest_commit_fails() -> None:
     """A logger fails to create a log if an empty ParamDB is given."""
     param_db = ParamDB[Any]("param.db")
-    root_logger = Logger(root_directory="dir", param_db=param_db)
+    root_logger = Logger("dir", param_db)
     error_msg = (
         "cannot tag log 'test' with most recent commit because ParamDB 'param.db' is"
         " empty"
@@ -231,7 +231,7 @@ def test_log_empty_paramdb_latest_commit_fails() -> None:
 @pytest.mark.usefixtures("cd_tempdir")
 def test_log_paramdb_latest_commit(param_db: ParamDB[Any]) -> None:
     """A logger can tag logs with the current ParamDB and path."""
-    logger = Logger(root_directory="dir", param_db=param_db)
+    logger = Logger("dir", param_db)
     for commit_id in 3, 4:
         log_metadatas = [
             logger.log_data("test", [], []).metadata,
@@ -246,7 +246,7 @@ def test_log_paramdb_latest_commit(param_db: ParamDB[Any]) -> None:
 
 def test_log_no_paramdb_explicit_commit() -> None:
     """A logger with no ParamDB can tag logs with an explicit commit ID."""
-    logger = Logger(root_directory="dir")
+    logger = Logger("dir")
     log_metadatas = [
         logger.log_data("test", [], [], commit_id=100).metadata,
         logger.log_dict("test", {}, commit_id=100).metadata,
@@ -259,7 +259,7 @@ def test_log_no_paramdb_explicit_commit() -> None:
 
 def test_log_param_db_explicit_commit(param_db: ParamDB[Any]) -> None:
     """A logger with a ParamDB can tag logs with an explicit commit ID."""
-    logger = Logger(root_directory="dir", param_db=param_db)
+    logger = Logger("dir", param_db)
     log_metadatas = [
         logger.log_data("test", [], [], commit_id=100).metadata,
         logger.log_dict("test", {}, commit_id=100).metadata,
