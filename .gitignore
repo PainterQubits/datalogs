@@ -9,6 +9,7 @@ dist/
 
 # Python
 __pycache__/
+.coverage
 
 # Data files
 *.db
