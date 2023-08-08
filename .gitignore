@@ -11,6 +11,10 @@ dist/
 __pycache__/
 .coverage
 
+# Sphinx
+docs/build/
+docs/jupyter_execute/
+
 # Data files
 *.db
 *.nc

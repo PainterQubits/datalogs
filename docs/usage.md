@@ -1,0 +1,263 @@
+# Usage
+
+```{py:currentmodule} datalogger
+
+```
+
+<!-- Jupyter Sphinx setup -->
+
+```{jupyter-execute}
+:hide-code:
+
+import os
+from tempfile import TemporaryDirectory
+from directory_tree import display_tree
+
+tmp_dir = TemporaryDirectory()
+os.chdir(tmp_dir.name)
+```
+
+## Background
+
+DataLogger is Python package to log array and dictionary data from scientific
+experiments. These logs are stored in files (NetCDF for array data and JSON for
+dictionary data). The log files are organized within a nested directory structure and
+tagged with metadata, such as timestamp or optionally a commit ID from a [ParamDB]
+database.
+
+The original purpose of DataLogger was to store logs from graph calibrations, where
+directories correspond to nodes in a graph, so the examples are based on this
+application. However, the core functionality is very general.
+
+## Logger Setup
+
+### Root Logger
+
+To log data, we first have to create a root {py:class}`Logger` object, passing the name
+of the root directory.
+
+```{jupyter-execute}
+from datalogger import Logger
+
+root_logger = Logger("data_logs")
+```
+
+Our current working directory now contains a directory called `data_logs`.
+
+```{jupyter-execute}
+:hide-code:
+
+display_tree("data_logs")
+```
+
+```{tip}
+The root {py:class}`Logger` should typically be defined in one place, and passed or
+imported to parts of the code that use it.
+```
+
+### Sub-Loggers
+
+We can then create a sub-{py:class}`Logger` objects, which will correspond to a
+particular calibration graph and node.
+
+```{jupyter-execute}
+graph_logger = root_logger.sub_logger("calibration_graph")
+node_logger = graph_logger.sub_logger("q1_spec_node")
+```
+
+These will correspond to subdirectories within the root directory.
+
+```{important}
+Unlike the root {py:class}`Logger`, which creates its directory right away if it does not
+exist, sub-{py:class}`Logger`s wait to create their directories until the first log file
+is created using them.
+
+This is done so that timestamps in directory names can reflect when the first log within
+them was created (often when that part of the experiment is being run), not when the
+{py:class}`Logger` object was created (often when the entire experiment is being set up).
+```
+
+## Logging
+
+### Data Logs
+
+The first type of log that can be created is a data log, which contains multidimensional
+array data. This type of log stores data in an [`xarray.Dataset`], which contains data
+variables, coordinates, and attributes. The log is saved to a NetCDF
+
+```{seealso}
+To learn more about Xarray data, see [Data Structures] in the Xarray user guide.
+```
+
+To aid in creating [`xarray.Dataset`] objects and to enforce certain conventions,
+DataLogger provides {py:class}`Coord` as a wrapper for an Xarray coordinate and
+{py:class}`DataVar` as a wrapper for a Xarray data variable. We can create a data log
+using these objects and {py:meth}`Logger.log_data`.
+
+```{jupyter-execute}
+from datalogger import Coord, DataVar
+
+times = [1, 2, 3]
+signal = [10, 20, 30]
+
+node_logger.log_data(
+    "q1_spec_signal",
+    [Coord("time", data=times, long_name="Time", units="s")],
+    [DataVar("signal", dims="time", data=signal, long_name="Signal", units="V")],
+)
+```
+
+The directories for the graph and node have now been created, along with the NetCDF log
+file.
+
+```{jupyter-execute}
+:hide-code:
+
+display_tree("data_logs")
+```
+
+### Dictionary Logs
+
+Dictionary logs store `dict` data in JSON files. The data contained in the dictionary must
+be compatible with Python's [`JSONEncoder`], and keys should be strings. We can create a
+dictionary log using {py:meth}`Logger.log_dict`.
+
+```{jupyter-execute}
+node_logger.log_dict(
+    "q1_spec_frequency",
+    {"f_rf": 3795008227, "f_if": 95008227, "f_lo": 3700000000},
+)
+```
+
+The log file has now been created within the node directory.
+
+```{jupyter-execute}
+:hide-code:
+
+display_tree("data_logs")
+```
+
+### Property Logs
+
+Property logs store the properties of an arbitrary object (which must have a `__dict__`
+attribute, see documentation for [`vars()`] for more information).
+
+```{warning}
+Property logs are built on top of dictionary logs, so they can only store JSON-compatible
+data. For this log type, non-string keys are converted to strings and values that are not
+JSON-compatible are converted to lists or dictionaries if possible, and if not are
+converted to strings.
+
+This means that a property log does not guarentee to store all information contained
+within a given object. Instead, it is meant to function as a quick way to create a general
+snapshot of the object. For data that must be stored and recovered exactly, use data or
+dictionary logs.
+```
+
+We can create a property log using {py:meth}`Logger.log_props`.
+
+```{jupyter-execute}
+class SpecNode:
+    def __init__(self, element: str) -> None:
+        self._element = element
+        self.xy_f_rf = 379500822
+        self.xy_f_if = 95008227
+        self.xy_f_lo = 3700000000
+
+q1_spec_node = SpecNode("q1")
+
+node_logger.log_props("q1_spec_node_props", q1_spec_node)
+```
+
+The log file has now been created within the node directory.
+
+```{jupyter-execute}
+:hide-code:
+
+display_tree("data_logs")
+```
+
+## Loading
+
+Logs can be loaded passing a file path to {py:func}`load_log`. We can also use
+{py:meth}`Logger.file_path` to aid in creating the file paths to logs. (The full path can
+also be passed in directly if known.)
+
+```{jupyter-execute}
+from datalogger import load_log
+
+q1_spec_signal_log = load_log(node_logger.file_path("q1_spec_signal.nc"))
+q1_spec_frequency_log = load_log(node_logger.file_path("q1_spec_frequency.json"))
+q1_spec_node_props_log = load_log(node_logger.file_path("q1_spec_node_props.json"))
+```
+
+### Accessing Data
+
+Logs are represented as objects ({py:class}`DataLog` or {py:class}`DictLog` depending on
+the log type). Data can be accessed using {py:attr}`DataLog.data` or
+{py:attr}`DictLog.data`.
+
+For a {py:class}`DataLog`, data is returned as an [`xarray.Dataset`] object.
+
+```{jupyter-execute}
+q1_spec_signal_log.data
+```
+
+For a {py:class}`DictLog`, data is returned as a dictionary.
+
+```{jupyter-execute}
+q1_spec_frequency_log.data
+```
+
+### Accessing Metadata
+
+Metadata is also loaded in and can be accessed using {py:attr}`DataLog.metadata` or
+{py:attr}`DictLog.metadata`. Metadata is stored using a {py:class}`LogMetadata` object.
+
+```{jupyter-execute}
+q1_spec_signal_log.metadata
+```
+
+Any property can be accessed as a property of this object. For example, we can get the
+timestamp using {py:attr}`LogMetadata.timestamp`.
+
+```{jupyter-execute}
+q1_spec_signal_log.metadata.timestamp
+```
+
+## ParamDB Integration
+
+Optionally, a [`ParamDB`] can be passed to a {py:class}`Logger`, in which case it will be
+used to automatically tag logs with the latest commit ID.
+
+```{jupyter-execute}
+from paramdb import ParamDB
+
+param_db = ParamDB[int]("param.db")
+param_db.commit("Initial commit", 123)
+
+root_logger = Logger("data_logs", param_db)
+graph_logger = root_logger.sub_logger("calibration_graph")
+node_logger = graph_logger.sub_logger("q1_spec_node")
+
+node_logger.log_dict(
+    "q1_spec_frequency",
+    {"f_rf": 3795008227, "f_if": 95008227, "f_lo": 3700000000},
+)
+```
+
+<!-- Jupyter Sphinx cleanup -->
+
+```{jupyter-execute}
+:hide-code:
+
+param_db.dispose()  # Fixes PermissionError on Windows
+```
+
+[ParamDB]: https://paramdb.readthedocs.io/en/stable/
+[`xarray.Dataset`]: https://docs.xarray.dev/en/stable/generated/xarray.Dataset.html
+[NetCDF]: https://www.unidata.ucar.edu/software/netcdf/
+[Data Structures]: https://docs.xarray.dev/en/stable/user-guide/data-structures.html
+[`JSONEncoder`]: https://docs.python.org/3/library/json.html#json.JSONEncoder
+[`vars()`]: https://docs.python.org/3/library/functions.html#vars
+[`ParamDB`]: https://paramdb.readthedocs.io/en/stable/api-reference.html#paramdb.ParamDB

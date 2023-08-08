@@ -117,7 +117,7 @@ def fixture_log_ext(log_type: type[DataLog | DictLog]) -> str:
 # pylint: disable-next=unused-argument
 def fixture_root_logger(cd_tempdir: None) -> Logger:
     """Root logger object."""
-    return Logger(root_directory="dir")
+    return Logger("dir")
 
 
 @pytest.fixture(name="sub_logger")

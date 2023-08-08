@@ -13,9 +13,10 @@ typing-extensions = "^4.7.1"
 numpy = "^1.25.2"
 xarray = "^2023.7.0"
 netcdf4 = "^1.6.4"
+paramdb = {version = "^0.9.0", optional = true}
 
-[tool.poetry.group.paramdb.dependencies]
-paramdb = "^0.9.0"
+[tool.poetry.extras]
+paramdb = ["paramdb"]
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.4.1"
@@ -25,6 +26,16 @@ black = "^23.7.0"
 pytest = "^7.4.0"
 pytest-cov = "^4.1.0"
 freezegun = "^1.2.2"
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^7.0.1"
+myst-parser = "^2.0.0"
+furo = "^2023.5.20"
+sphinx-copybutton = "^0.5.2"
+ipykernel = "^6.25.1"
+jupyter-sphinx = "^0.4.0"
+sphinx-autobuild = "^2021.3.14"
+directory-tree = "^0.0.3.1"
 
 [tool.mypy]
 strict = true

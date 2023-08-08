@@ -35,32 +35,28 @@ class Logger:
     :py:class:`Logger` will function as a root. Optionally, ``param_db`` can be given to
     enable commit tagging.
 
-    Otherwise, ``parent`` and ``description`` must be given, and this :py:class:`Logger`
-    will correspond to a subdirectory within its parent's directory.
+    Otherwise, ``parent`` and ``description`` must be given, and this will be a
+    sub-:py:class:`Logger` object that corresponds to a subdirectory within its parent's
+    directory (and uses its parent's ParamDB, if given).
     """
 
     @overload
     def __init__(
-        self, *, root_directory: str, param_db: ParamDB[Any] | None = None
+        self, root_directory: str, param_db: ParamDB[Any] | None = None
     ) -> None:  # pragma: no cover
         ...
 
     @overload
-    def __init__(
-        self,
-        *,
-        parent: Logger,
-        description: str,
-    ) -> None:  # pragma: no cover
+    def __init__(self, *, parent: Logger, description: str) -> None:  # pragma: no cover
         ...
 
     def __init__(
         self,
-        *,
         root_directory: str | None = None,
+        param_db: ParamDB[Any] | None = None,
+        *,
         parent: Logger | None = None,
         description: str | None = None,
-        param_db: ParamDB[Any] | None = None,
     ) -> None:
         if root_directory is None:
             if parent is None:
@@ -107,7 +103,7 @@ class Logger:
             return self._name
         return os.path.join(self._parent.directory, self._name)
 
-    def filepath(self, filename: str) -> str:
+    def file_path(self, filename: str) -> str:
         """
         Generate a path to a file or directory with the given name within the directory
         of this :py:class:`Logger`.

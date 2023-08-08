@@ -3,6 +3,7 @@ Wrappers for the Xarray ``Variable`` class to represent data and dimensional
 coordinates when creating a data log.
 """
 
+from __future__ import annotations  # Needed for Sphinx autodoc_type_aliases to work
 from collections.abc import Sequence
 from numpy.typing import ArrayLike
 import xarray as xr
