@@ -9,9 +9,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Initial functionality of saving to and loading from log files.
-- Logger classes `DataLogger`, `GraphLogger`, and `NodeLogger`.
-- Log classes `DataLog` and `DictLog`.
+- Logger class `Logger` to create nested directory structure and log array data,
+  dictionaries, and object properties.
+- Log classes `DataLog` and `DictLog`, and log metadata class `LogMetadata`.
+- Classes `Coord` and `DataVar` to aid in creating a data log.
+- Function `load_log()` to load log files.
+- Initial documentation website.
 
-[unreleased]: https://github.com/PainterQubits/datalogger/compare/main...main
-[0.1.0]: https://github.com/PainterQubits/paramdb/releases/tag/v0.1.0
+[unreleased]: https://github.com/PainterQubits/datalogger/compare/v0.1.0...main
+[0.1.0]: https://github.com/PainterQubits/datalogger/releases/tag/v0.1.0
