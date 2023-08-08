@@ -30,10 +30,15 @@ class LogMetadata:
     """
 
     directory: str
+    """Directory this log was created in."""
     timestamp: datetime
+    """When the log was created."""
     description: str
+    """Log description."""
     commit_id: int | None
+    """Commit ID in the ParamDB."""
     param_db_path: str | None
+    """Path to the ParamDB."""
 
     def __repr__(self) -> str:
         field_values = ""
@@ -92,7 +97,7 @@ class _Log(ABC, Generic[_T]):
 
     @property
     def path(self) -> str:
-        """Path to the log file to save to."""
+        """Path to the log file."""
         if self._path is None:
             directory = self._metadata.directory
             self._path = os.path.join(
@@ -178,7 +183,7 @@ class DataLog(_Log[xr.Dataset], ext=".nc"):
 
     @classmethod
     def load(cls, path: str) -> DataLog:
-        dataset = xr.open_dataset(path)
+        dataset = xr.load_dataset(path)
         metadata = _metadata_from_dict(dataset.attrs, prefix="__metadata_")
         return DataLog(metadata, dataset, path)
 

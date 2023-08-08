@@ -103,7 +103,7 @@ class Logger:
             return self._name
         return os.path.join(self._parent.directory, self._name)
 
-    def filepath(self, filename: str) -> str:
+    def file_path(self, filename: str) -> str:
         """
         Generate a path to a file or directory with the given name within the directory
         of this :py:class:`Logger`.

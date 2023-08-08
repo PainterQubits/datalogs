@@ -99,9 +99,9 @@ def test_sub_logger_directory(logger: Logger, timestamp: datetime) -> None:
     assert os.path.exists(sub_logger_dir)
 
 
-def test_filepath(logger: Logger) -> None:
-    """A logger can return a filepath within its directory."""
-    assert logger.filepath("test.png") == os.path.join(logger.directory, "test.png")
+def test_file_path(logger: Logger) -> None:
+    """A logger can return a file path within its directory."""
+    assert logger.file_path("test.png") == os.path.join(logger.directory, "test.png")
 
 
 def test_log_data(

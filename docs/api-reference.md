@@ -21,9 +21,9 @@ All of the following can be imported from `datalogger`.
 ## Log Objects
 
 ```{eval-rst}
-.. autoclass:: LogMetadata
 .. autoclass:: DataLog
 .. autoclass:: DictLog
+.. autoclass:: LogMetadata
 ```
 
 ## Data Log Variables
