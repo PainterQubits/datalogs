@@ -1,7 +1,7 @@
 """Function to load logs from files."""
 
 import os
-from datalogger._log import DataLog, DictLog
+from datalogger._logs import DataLog, DictLog
 
 
 def load_log(path: str) -> DataLog | DictLog:

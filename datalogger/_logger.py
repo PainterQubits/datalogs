@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 from typing import TypeVar, Any, overload
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Sequence, Collection, Mapping
 import os
 from datetime import datetime, timezone
 from datalogger._variables import Coord, DataVar
-from datalogger._log import LogMetadata, DataLog, DictLog
+from datalogger._logs import LogMetadata, DataLog, DictLog
 from datalogger._get_filename import get_filename
 
 try:
@@ -43,11 +43,11 @@ class Logger:
     @overload
     def __init__(
         self, root_directory: str, param_db: ParamDB[Any] | None = None
-    ) -> None:
+    ) -> None:  # pragma: no cover
         ...
 
     @overload
-    def __init__(self, *, parent: Logger, description: str) -> None:
+    def __init__(self, *, parent: Logger, description: str) -> None:  # pragma: no cover
         ...
 
     def __init__(
@@ -58,6 +58,18 @@ class Logger:
         parent: Logger | None = None,
         description: str | None = None,
     ) -> None:
+        if root_directory is None:
+            if parent is None:
+                raise TypeError("Logger with no root_directory must have a parent")
+            if description is None:
+                raise TypeError("Logger with no root_directory must have a description")
+        else:
+            if parent is not None:
+                raise TypeError("Logger with a root_directory cannot have a parent")
+            if description is not None:
+                raise TypeError(
+                    "Logger with a root_directory cannot have a description"
+                )
         self._name = root_directory
         self._parent = parent
         self._description = description
@@ -78,10 +90,10 @@ class Logger:
     def directory(self) -> str:
         """Directory where this logger saves subdirectories or files."""
         if self._name is None:
-            if self._parent is None:
-                raise TypeError(f"Logger '{self._description}' has no parent")
-            if self._description is None:
-                raise TypeError(f"Logger '{self._description}' has no description")
+            # If self._name is None, both self._parent and self._description should have
+            # been defined in self.__init__().
+            assert self._parent is not None, "sub-Logger must have a parent"
+            assert self._description is not None, "sub-Logger must have a description"
             self._name = get_filename(
                 self._parent.directory,
                 self._description,
@@ -122,8 +134,8 @@ class Logger:
             latest_commit = self._param_db.latest_commit
             if latest_commit is None:
                 raise IndexError(
-                    "cannot tag log with most recent commit because ParamDB at"
-                    f" '{self._param_db.path}' is empty"
+                    f"cannot tag log '{description}' with most recent commit because"
+                    f" ParamDB '{self._param_db.path}' is empty"
                 )
             commit_id = latest_commit.id
         self._create_directory()
@@ -178,29 +190,41 @@ class Logger:
         return self._log(make_log, description, commit_id)
 
     @classmethod
-    def _should_save_prop(cls, prop: Any) -> bool:
+    def _convert_to_json(cls, obj: Any) -> Any:
         """
-        Whether the given object property should be saved. For now, this is checking
-        whether the given property can be saved as JSON.
+        Return a JSON-serializable version of the given object by converting ``Mapping``
+        and ``Collection`` objects to dictionaries and lists, converting other
+        non-JSON-serializable values to ``repr`` strings, and converting all dictionary
+        keys to strings.
         """
-        if isinstance(prop, (str, int, float, bool)) or prop is None:
-            return True
-        if isinstance(prop, (list, tuple)):
-            return all(cls._should_save_prop(p) for p in prop)
-        if isinstance(prop, dict):
-            return all(cls._should_save_prop(p) for p in prop.values())
-        return False
+        if isinstance(obj, (str, int, float, bool)) or obj is None:
+            return obj
+        if isinstance(obj, Mapping):
+            return {str(k): cls._convert_to_json(v) for k, v in obj.items()}
+        if isinstance(obj, Collection):
+            return [cls._convert_to_json(v) for v in obj]
+        return repr(obj)
 
     def log_props(
         self, description: str, obj: Any, commit_id: int | None = None
     ) -> DictLog:
         """
         Save a dictionary of the given object's properties and corresponding metadata in
-        a JSON file, and return a :py:class:`DictLog` with this data and metadata. Only
-        properties that can be converted directly to JSON will be saved.
+        a JSON file, and return a :py:class:`DictLog` with this data and metadata. The
+        object must be one with properties (i.e. one that has a ``__dict__`` property).
+
+        This function will attempt to convert values that are not JSON-serializable to
+        lists or dictionaries, and otherwise will convert them to string
+        representations. This is intended to save a snapshot of the current properties
+        of the given object, but makes no guarentees that all information is saved.
 
         The log will be tagged with the given commit ID, or the latest commit ID if none
         is given (and if this Logger has a corresponding ParamDB).
         """
-        props = {k: v for k, v in vars(obj).items() if self._should_save_prop(v)}
-        return self.log_dict(description, props, commit_id)
+        try:
+            obj_vars = vars(obj)
+        except TypeError as exc:
+            raise TypeError(
+                f"'{type(obj).__name__}' object is not supported by log_props"
+            ) from exc
+        return self.log_dict(description, self._convert_to_json(obj_vars), commit_id)
