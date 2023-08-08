@@ -7,6 +7,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] (Aug 8 2023)
+
 ### Added
 
 - Logger class `Logger` to create nested directory structure and log array data,
