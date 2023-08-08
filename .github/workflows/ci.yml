@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  PYTHON_VERSION: "3.10"
+  POETRY_VERSION: "1.5.1"
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - name: Set up Python with Poetry cache
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: poetry
+
+      - name: Install dependencies
+        run: poetry install --all-extras
+
+      - name: Check Formatting (Black)
+        run: poetry run black datalogger tests --check
+
+      - name: Lint (Flake8)
+        run: poetry run flake8 datalogger tests
+
+      - name: Lint (Pylint)
+        run: poetry run pylint datalogger tests
+
+      - name: Mypy cache
+        uses: actions/cache@v3
+        with:
+          path: .mypy_cache
+          key: mypy-${{ runner.os }}-python-${{ env.PYTHON_VERSION }}-${{ github.sha }}
+          restore-keys: |
+            mypy-${{ runner.os }}-python-${{ env.PYTHON_VERSION }}-
+
+      - name: Type Check (Mypy)
+        run: poetry run mypy datalogger tests
+
+      - name: Test (Pytest)
+        run: poetry run pytest
