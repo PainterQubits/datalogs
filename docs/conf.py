@@ -24,18 +24,15 @@ myst_heading_anchors = 3
 
 # Autodoc options
 # See https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#configuration
-autodoc_default_options = {"members": True, "member-order": "bysource"}
-autodoc_type_aliases = {"ArrayLike": "numpy.typing.ArrayLike"}
+autodoc_default_options = {
+    "members": True,
+    "inherited-members": True,
+    "member-order": "bysource",
+}
+autodoc_type_aliases = {
+    "datetime": "datetime.datetime",
+    "ArrayLike": "numpy.typing.ArrayLike",
+    "xr.Variable": "xarray.Variable",
+    "xr.Dataset": "xarray.Dataset",
+}
 add_module_names = False
-
-
-# # Autodoc custom signature and return annotation processing
-# def process_signature(app, what, name, obj, options, signature, return_annotation):
-#     if isinstance(return_annotation, str):
-#         return_annotation = return_annotation.replace("paramdb._database.", "")
-#     return signature, return_annotation
-
-
-# # Connect event handling
-# def setup(app):
-#     app.connect("autodoc-process-signature", process_signature)

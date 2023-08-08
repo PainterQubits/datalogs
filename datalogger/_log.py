@@ -164,6 +164,11 @@ class DataLog(_Log[xr.Dataset], ext=".nc"):
         )
         return DataLog(metadata, dataset)
 
+    # Allows return type to show properly in Sphinx autodoc
+    @property
+    def data(self) -> xr.Dataset:
+        return super().data
+
     def _save(self, path: str) -> None:
         attrs_with_metadata = {
             **self._dataset.attrs,
@@ -187,6 +192,11 @@ class DictLog(_Log[dict[str, Any]], ext=".json"):
     ):
         self._data_dict = data_dict
         super().__init__(metadata, data_dict, path)
+
+    # Allows return type to show properly in Sphinx autodoc
+    @property
+    def data(self) -> dict[str, Any]:
+        return super().data
 
     def _save(self, path: str) -> None:
         data_dict_with_metadata = {

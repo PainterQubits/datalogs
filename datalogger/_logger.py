@@ -35,32 +35,28 @@ class Logger:
     :py:class:`Logger` will function as a root. Optionally, ``param_db`` can be given to
     enable commit tagging.
 
-    Otherwise, ``parent`` and ``description`` must be given, and this :py:class:`Logger`
-    will correspond to a subdirectory within its parent's directory.
+    Otherwise, ``parent`` and ``description`` must be given, and this will be a
+    sub-:py:class:`Logger` object that corresponds to a subdirectory within its parent's
+    directory (and uses its parent's ParamDB, if given).
     """
 
     @overload
     def __init__(
-        self, *, root_directory: str, param_db: ParamDB[Any] | None = None
+        self, root_directory: str, param_db: ParamDB[Any] | None = None
     ) -> None:
         ...
 
     @overload
-    def __init__(
-        self,
-        *,
-        parent: Logger,
-        description: str,
-    ) -> None:
+    def __init__(self, *, parent: Logger, description: str) -> None:
         ...
 
     def __init__(
         self,
-        *,
         root_directory: str | None = None,
+        param_db: ParamDB[Any] | None = None,
+        *,
         parent: Logger | None = None,
         description: str | None = None,
-        param_db: ParamDB[Any] | None = None,
     ) -> None:
         self._name = root_directory
         self._parent = parent

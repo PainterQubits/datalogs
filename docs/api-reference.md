@@ -6,22 +6,29 @@
 
 All of the following can be imported from `datalogger`.
 
-## Loggers
+## Logger
 
 ```{eval-rst}
-.. autoclass:: DataLogger
-.. autoclass:: GraphLogger
-   :show-inheritance:
-.. autoclass:: NodeLogger
-   :show-inheritance:
+.. autoclass:: Logger
 ```
 
-## Logs
+## Load Log
 
 ```{eval-rst}
+.. autofunction:: load_log
+```
+
+## Log Objects
+
+```{eval-rst}
+.. autoclass:: LogMetadata
 .. autoclass:: DataLog
 .. autoclass:: DictLog
-.. autoclass:: LogMetadata
+```
+
+## Data Log Variables
+
+```{eval-rst}
 .. autoclass:: Coord
 .. autoclass:: DataVar
 ```
