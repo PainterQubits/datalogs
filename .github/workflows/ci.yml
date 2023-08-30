@@ -9,11 +9,14 @@ on:
       - main
 
 env:
-  PYTHON_VERSION: "3.10"
-  POETRY_VERSION: "1.5.1"
+  POETRY_VERSION: "1.6.1"
+  MAIN_PYTHON_VERSION: "3.9"
 
 jobs:
   ci:
+    strategy:
+      matrix:
+        python_version: ["3.9", "3.10", "3.11"]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,33 +28,35 @@ jobs:
       - name: Set up Python with Poetry cache
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{ matrix.python_version }}
           cache: poetry
 
       - name: Install dependencies
         run: poetry install --all-extras
 
-      - name: Install ParamDB explicitly
-        run: poetry run pip install paramdb
-
       - name: Check Formatting (Black)
+        if: matrix.python_version == env.MAIN_PYTHON_VERSION
         run: poetry run black datalogger tests --check
 
       - name: Lint (Flake8)
+        if: matrix.python_version == env.MAIN_PYTHON_VERSION
         run: poetry run flake8 datalogger tests
 
       - name: Lint (Pylint)
+        if: matrix.python_version == env.MAIN_PYTHON_VERSION
         run: poetry run pylint datalogger tests
 
       - name: Mypy cache
+        if: matrix.python_version == env.MAIN_PYTHON_VERSION
         uses: actions/cache@v3
         with:
           path: .mypy_cache
-          key: mypy-${{ runner.os }}-python-${{ env.PYTHON_VERSION }}-${{ github.sha }}
+          key: mypy-${{ runner.os }}-python-${{ matrix.python_version }}-${{ github.sha }}
           restore-keys: |
-            mypy-${{ runner.os }}-python-${{ env.PYTHON_VERSION }}-
+            mypy-${{ runner.os }}-python-${{ matrix.python_version }}-
 
       - name: Type Check (Mypy)
+        if: matrix.python_version == env.MAIN_PYTHON_VERSION
         run: poetry run mypy datalogger tests
 
       - name: Test (Pytest)

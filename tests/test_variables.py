@@ -1,5 +1,6 @@
 """Tests for datalogger._variables."""
 
+from __future__ import annotations
 from numpy.testing import assert_array_equal
 import xarray as xr
 from datalogger import Coord, DataVar
