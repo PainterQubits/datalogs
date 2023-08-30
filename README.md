@@ -20,7 +20,7 @@ To install along with [ParamDB] for support for tagging logs with the latest com
 DataLogger can be installed with the `paramdb` extra:
 
 ```
-pip install -U datalogger[paramdb] --extra-index-url https://painterqubits.github.io/datalogger/releases
+pip install -U "datalogger[paramdb]" --extra-index-url https://painterqubits.github.io/datalogger/releases
 ```
 
 [ParamDB]: https://paramdb.readthedocs.io/en/stable/
