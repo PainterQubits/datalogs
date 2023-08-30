@@ -7,6 +7,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.1] (Aug 30 2023)
+
+### Added
+
+- Support for Python 3.9
+
 ## [0.1.0] (Aug 8 2023)
 
 ### Added
@@ -18,5 +24,6 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Function `load_log()` to load log files.
 - Initial documentation website.
 
-[unreleased]: https://github.com/PainterQubits/datalogger/compare/v0.1.0...main
+[unreleased]: https://github.com/PainterQubits/datalogger/compare/v0.1.1...main
+[0.1.1]: https://github.com/PainterQubits/datalogger/releases/tag/v0.1.1
 [0.1.0]: https://github.com/PainterQubits/datalogger/releases/tag/v0.1.0
