@@ -1,5 +1,6 @@
 """Tests for datalogger._load_log."""
 
+from __future__ import annotations
 from typing import Any
 import xarray.testing
 import pytest

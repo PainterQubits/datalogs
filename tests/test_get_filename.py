@@ -1,5 +1,6 @@
 """Tests for datalogger._get_filename."""
 
+from __future__ import annotations
 import os
 from datetime import datetime
 import pytest

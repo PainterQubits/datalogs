@@ -1,5 +1,6 @@
 """Defines global fixtures. Called automatically by Pytest before running tests."""
 
+from __future__ import annotations
 from typing import Any, cast
 import os
 from pathlib import Path

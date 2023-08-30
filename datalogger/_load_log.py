@@ -1,5 +1,6 @@
 """Function to load logs from files."""
 
+from __future__ import annotations
 import os
 from datalogger._logs import DataLog, DictLog
 

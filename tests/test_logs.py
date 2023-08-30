@@ -1,5 +1,6 @@
 """Tests for datalogger._logs."""
 
+from __future__ import annotations
 from typing import Any
 import os
 from copy import deepcopy

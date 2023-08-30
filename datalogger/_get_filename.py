@@ -1,5 +1,6 @@
 """Function to get a filename for a logger directory or log file."""
 
+from __future__ import annotations
 import os
 from datetime import datetime
 
