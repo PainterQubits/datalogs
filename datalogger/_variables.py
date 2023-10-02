@@ -27,7 +27,7 @@ class _Variable:
             attrs["long_name"] = long_name
         if units is not None:
             attrs["units"] = units
-        self._variable = xr.Variable(dims, data, attrs)  # type: ignore
+        self._variable = xr.Variable(dims, data, attrs)
 
     @property
     def name(self) -> str:
