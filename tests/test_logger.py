@@ -95,11 +95,11 @@ def test_sub_logger_timestamp_creates_directory(
     sub_logger_1 = logger.sub_logger("sub_logger")
     assert not os.path.exists(sub_logger_dir)
     with freeze_time(timestamp):
-        sub_logger_1.directory
+        sub_logger_1.directory  # pylint: disable=pointless-statement
     assert os.path.exists(sub_logger_dir)
     sub_logger_2 = logger.sub_logger("sub_logger")
     with freeze_time(timestamp):
-        sub_logger_2.directory
+        sub_logger_2.directory  # pylint: disable=pointless-statement
     assert sub_logger_1.directory != sub_logger_2.directory
 
 

@@ -48,9 +48,12 @@ class Logger:
         ...
 
     @overload
-    def __init__(self, *, parent: Logger, description: str) -> None:  # pragma: no cover
+    def __init__(
+        self, *, parent: Logger, description: str, timestamp: bool = True
+    ) -> None:  # pragma: no cover
         ...
 
+    # pylint: disable-next=too-many-arguments
     def __init__(
         self,
         root_directory: str | None = None,
@@ -82,7 +85,7 @@ class Logger:
         if root_directory is not None or not timestamp:
             # Generate this logger's directory, if it is a root Logger or a sub-Logger
             # with no timestamp.
-            self.directory
+            self.directory  # pylint: disable=pointless-statement
 
     def sub_logger(self, description: str, timestamp: bool = True) -> Logger:
         """
@@ -105,8 +108,8 @@ class Logger:
         """
         Directory where this logger saves subdirectories or files.
 
-        If the directory does not yet exist (i.e. if this is a sub-:py:class:`Logger` with
-        a timestamp), it is created.
+        If the directory does not yet exist (i.e. if this is a sub-:py:class:`Logger`
+        with a timestamp), it is created.
         """
         if self._name is None:
             # If self._name is None, both self._parent and self._description should have
