@@ -20,21 +20,22 @@ os.chdir(tmp_dir.name)
 ## Background
 
 DataLogger is Python package to log array and dictionary data from scientific
-experiments. These logs are stored in files (NetCDF for array data and JSON for
+experiments. These logs are stored in files (netCDF for array data and JSON for
 dictionary data). The log files are organized within a nested directory structure and
 tagged with metadata, such as timestamp or optionally a commit ID from a [ParamDB]
 database.
 
-The original purpose of DataLogger was to store logs from graph calibrations, where
-directories correspond to nodes in a graph, so the examples are based on this
+The original purpose of DataLogger was to store logs from graph calibration experiments,
+where directories correspond to nodes in a graph, so the examples below are based on this
 application. However, the core functionality is very general.
 
 ## Logger Setup
 
 ### Root Logger
 
-To log data, we first have to create a root {py:class}`Logger` object, passing the name
-of the root directory.
+To log data, we first have to create a root {py:class}`Logger` object, passing the path
+(either relative or absolute) to the root directory. This directory will be created if it
+does not exist.
 
 ```{jupyter-execute}
 from datalogger import Logger
@@ -57,22 +58,37 @@ imported to parts of the code that use it.
 
 ### Sub-Loggers
 
-We can then create a sub-{py:class}`Logger` objects, which will correspond to a
-particular calibration graph and node.
+We can also create sub-{py:class}`Logger` objects, which will correspond to subdirectories
+within the root directory. By default, a sub-{py:class}`Logger` creates a new directory
+with a timestamp. However, using the `timestamp` argument, it is possible to create
+sub-{py:class}`Logger`s that, just like root loggers, contain no timestamp and immediately
+create their directory if it does not exist.
+
+For example, here we create a sub-{py:class}`Logger` with no timestamp to contain all
+calibration experiments, and then timestamped sub-{py:class}`Logger`s to run a particular
+experiment graph containing one node.
 
 ```{jupyter-execute}
-graph_logger = root_logger.sub_logger("calibration_graph")
+calibration_logger = root_logger.sub_logger("calibrations", timestamp=False)
+graph_logger = calibration_logger.sub_logger("calibration_graph")
 node_logger = graph_logger.sub_logger("q1_spec_node")
 ```
 
-These will correspond to subdirectories within the root directory.
+We can see that the directory `calibrations` is created immediately, while the timestamped
+directories are not created yet.
+
+```{jupyter-execute}
+:hide-code:
+
+display_tree("data_logs")
+```
 
 ```{important}
-Unlike the root {py:class}`Logger`, which creates its directory right away if it does not
-exist, sub-{py:class}`Logger`s wait to create their directories until the first log file
-is created using them.
+Sub-{py:class}`Logger`s with timestamps wait to create their directories until their
+directory path is accessed, either explicitly via {py:attr}`Logger.directory` or
+internally, e.g. to create a log file.
 
-This is done so that timestamps in directory names can reflect when the first log within
+This is done so that timestamps in directory names can reflect when the first file within
 them was created (often when that part of the experiment is being run), not when the
 {py:class}`Logger` object was created (often when the entire experiment is being set up).
 ```
@@ -83,7 +99,8 @@ them was created (often when that part of the experiment is being run), not when
 
 The first type of log that can be created is a data log, which contains multidimensional
 array data. This type of log stores data in an [`xarray.Dataset`], which contains data
-variables, coordinates, and attributes. The log is saved to a NetCDF
+variables, coordinates, and attributes. The log is saved to a [netCDF] file via
+[`xarray.Dataset.to_netcdf()`].
 
 ```{seealso}
 To learn more about Xarray data, see [Data Structures] in the Xarray user guide.
@@ -107,7 +124,7 @@ node_logger.log_data(
 )
 ```
 
-The directories for the graph and node have now been created, along with the NetCDF log
+The directories for the graph and node have now been created, along with the netCDF log
 file.
 
 ```{jupyter-execute}
@@ -179,7 +196,7 @@ display_tree("data_logs")
 
 ## Loading
 
-Logs can be loaded passing a file path to {py:func}`load_log`. We can also use
+Logs can be loaded by passing a file path to {py:func}`load_log`. We can also use
 {py:meth}`Logger.file_path` to aid in creating the file paths to logs. (The full path can
 also be passed in directly if known.)
 
@@ -189,6 +206,19 @@ from datalogger import load_log
 q1_spec_signal_log = load_log(node_logger.file_path("q1_spec_signal.nc"))
 q1_spec_frequency_log = load_log(node_logger.file_path("q1_spec_frequency.json"))
 q1_spec_node_props_log = load_log(node_logger.file_path("q1_spec_node_props.json"))
+```
+
+Alternatively, logs can be loaded using {py:class}`DataLog` for data logs or
+{py:class}`DictLog` for dictionary logs. This is not necessary since {py:func}`load_log`
+already infers the log type from the file extension, but is useful for static type
+checking when the log type is known.
+
+```{jupyter-execute}
+from datalogger import DataLog, DictLog
+
+q1_spec_signal_log = DataLog.load(node_logger.file_path("q1_spec_signal.nc"))
+q1_spec_frequency_log = DictLog.load(node_logger.file_path("q1_spec_frequency.json"))
+q1_spec_node_props_log = DictLog.load(node_logger.file_path("q1_spec_node_props.json"))
 ```
 
 ### Accessing Data
@@ -218,8 +248,8 @@ Metadata is also loaded in and can be accessed using {py:attr}`DataLog.metadata`
 q1_spec_signal_log.metadata
 ```
 
-Any property can be accessed as a property of this object. For example, we can get the
-timestamp using {py:attr}`LogMetadata.timestamp`.
+Metadata properties can be accessed as properties of this object. For example, we can get
+the timestamp using {py:attr}`LogMetadata.timestamp`.
 
 ```{jupyter-execute}
 q1_spec_signal_log.metadata.timestamp
@@ -227,8 +257,8 @@ q1_spec_signal_log.metadata.timestamp
 
 ## ParamDB Integration
 
-Optionally, a [`ParamDB`] can be passed to a {py:class}`Logger`, in which case it will be
-used to automatically tag logs with the latest commit ID.
+Optionally, a [`ParamDB`] can be passed to a root {py:class}`Logger`, in which case it
+will be used to automatically tag logs with the latest commit ID.
 
 ```{jupyter-execute}
 from paramdb import ParamDB
@@ -256,7 +286,8 @@ param_db.dispose()  # Fixes PermissionError on Windows
 
 [ParamDB]: https://paramdb.readthedocs.io/en/stable/
 [`xarray.Dataset`]: https://docs.xarray.dev/en/stable/generated/xarray.Dataset.html
-[NetCDF]: https://www.unidata.ucar.edu/software/netcdf/
+[netCDF]: https://www.unidata.ucar.edu/software/netcdf/
+[`xarray.Dataset.to_netcdf()`]: https://docs.xarray.dev/en/latest/generated/xarray.Dataset.to_netcdf.html
 [Data Structures]: https://docs.xarray.dev/en/stable/user-guide/data-structures.html
 [`JSONEncoder`]: https://docs.python.org/3/library/json.html#json.JSONEncoder
 [`vars()`]: https://docs.python.org/3/library/functions.html#vars
