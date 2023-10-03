@@ -37,7 +37,8 @@ class Logger:
 
     Otherwise, ``parent`` and ``description`` must be given, and this will be a
     sub-:py:class:`Logger` object that corresponds to a subdirectory within its parent's
-    directory (and uses its parent's ParamDB, if given).
+    directory (and uses its parent's ParamDB, if given). See
+    :py:meth:`Logger.sub_logger` for an explanation of the ``timestamp`` option.
     """
 
     @overload
@@ -57,6 +58,7 @@ class Logger:
         *,
         parent: Logger | None = None,
         description: str | None = None,
+        timestamp: bool = True,
     ) -> None:
         if root_directory is None:
             if parent is None:
@@ -73,35 +75,61 @@ class Logger:
         self._name = root_directory
         self._parent = parent
         self._description = description
+        self._timestamp = timestamp
         self._param_db: ParamDB[Any] | None = (
             parent._param_db if parent is not None else param_db
         )
-        if root_directory is not None:
-            self._create_directory()
+        if root_directory is not None or not timestamp:
+            # Generate this logger's directory, if it is a root Logger or a sub-Logger
+            # with no timestamp.
+            self.directory
 
-    def sub_logger(self, description: str) -> Logger:
+    def sub_logger(self, description: str, timestamp: bool = True) -> Logger:
         """
         Create a new sub-:py:class:`Logger` with the given description corresponding to
         a subdirectory within the parent :py:class:`Logger`.
+
+        By default, ``timestamp`` is True, meaning that the directory name will include
+        a timestamp corresponding to when it was created. (Note that the directory will
+        be created when first needed so that the timestamp more accurately reflects when
+        its content was created.)
+
+        If ``timestamp`` is False, the directory name will not include a timestamp. If
+        there is an existing directory, it will be used. If not, a new directory will be
+        created immediately.
         """
-        return Logger(parent=self, description=description)
+        return Logger(parent=self, description=description, timestamp=timestamp)
 
     @property
     def directory(self) -> str:
-        """Directory where this logger saves subdirectories or files."""
+        """
+        Directory where this logger saves subdirectories or files.
+
+        If the directory does not yet exist (i.e. if this is a sub-:py:class:`Logger` with
+        a timestamp), it is created.
+        """
         if self._name is None:
             # If self._name is None, both self._parent and self._description should have
             # been defined in self.__init__().
             assert self._parent is not None, "sub-Logger must have a parent"
             assert self._description is not None, "sub-Logger must have a description"
-            self._name = get_filename(
-                self._parent.directory,
-                self._description,
-                timestamp=_now(),
+            self._name = (
+                get_filename(
+                    self._parent.directory,
+                    self._description,
+                    timestamp=_now(),
+                )
+                if self._timestamp
+                else self._description
             )
-        if self._parent is None:
-            return self._name
-        return os.path.join(self._parent.directory, self._name)
+        directory = (
+            self._name
+            if self._parent is None
+            else os.path.join(self._parent.directory, self._name)
+        )
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+        return directory
 
     def file_path(self, filename: str) -> str:
         """
@@ -112,13 +140,6 @@ class Logger:
         directory with that path exists.
         """
         return os.path.join(self.directory, filename)
-
-    def _create_directory(self) -> None:
-        """Create the directory for this logger and its parents if they do not exist."""
-        if self._parent is not None:
-            self._parent._create_directory()  # pylint: disable=protected-access
-        if not os.path.exists(self.directory):
-            os.mkdir(self.directory)
 
     def _log(
         self,
@@ -138,7 +159,6 @@ class Logger:
                     f" ParamDB '{self._param_db.path}' is empty"
                 )
             commit_id = latest_commit.id
-        self._create_directory()
         log = make_log(
             LogMetadata(
                 directory=self.directory,

@@ -7,6 +7,15 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Ability to create sub-Loggers with no timestamp using the `timestamp` option.
+
+### Changed
+
+- Sub-Loggers without timestamps create their directory as soon as `Logger.directory` is
+  first called, rather than only when a log is created.
+
 ## [0.1.1] (Aug 30 2023)
 
 ### Added
