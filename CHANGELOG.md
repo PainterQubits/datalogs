@@ -7,6 +7,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] (Oct 4 2023)
+
 ### Added
 
 - Ability to create sub-`Logger`s with no timestamp using the `timestamp` option.
@@ -33,6 +35,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Function `load_log()` to load log files.
 - Initial documentation website.
 
-[unreleased]: https://github.com/PainterQubits/datalogger/compare/v0.1.1...main
+[unreleased]: https://github.com/PainterQubits/datalogger/compare/v0.2.0...main
+[0.2.0]: https://github.com/PainterQubits/datalogger/releases/tag/v0.2.0
 [0.1.1]: https://github.com/PainterQubits/datalogger/releases/tag/v0.1.1
 [0.1.0]: https://github.com/PainterQubits/datalogger/releases/tag/v0.1.0
