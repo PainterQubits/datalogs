@@ -57,24 +57,50 @@ def test_sub_logger_no_description_fails() -> None:
 
 @pytest.mark.usefixtures("cd_tempdir")
 def test_root_logger_creates_directory() -> None:
-    """A root Logger creates its directory when it is defined."""
+    """
+    A root Logger creates its directory when it is defined, and another root logger will
+    reuse the same directory.
+    """
     assert not os.path.exists("dir")
-    Logger("dir")
+    root_logger_1 = Logger("dir")
     assert os.path.exists("dir")
+    root_logger_2 = Logger("dir")
+    assert root_logger_1.directory == root_logger_2.directory
 
 
-def test_sub_logger_creates_directory(logger: Logger, timestamp: datetime) -> None:
-    """A sub-Logger creates its directory when a log is created."""
+def test_sub_logger_no_timestamp_creates_directory(logger: Logger) -> None:
+    """
+    A sub-Logger with no timestamp creates its directory when it is defined, and another
+    sub-Logger with no timestamp will reuse the same directory.
+    """
+    sub_logger_dir = os.path.join(logger.directory, "sub_logger")
+    sub_logger_1 = logger.sub_logger("sub_logger", timestamp=False)
+    assert os.path.exists(sub_logger_dir)
+    sub_logger_2 = logger.sub_logger("sub_logger", timestamp=False)
+    assert sub_logger_1.directory == sub_logger_2.directory
+
+
+def test_sub_logger_timestamp_creates_directory(
+    logger: Logger, timestamp: datetime
+) -> None:
+    """
+    A sub-Logger with a timestamp creates its directory when the directory is accessed,
+    and another sub-Logger with a timestamp will always create a new directory.
+    """
     parent_dir = logger.directory
-    sub_logger = logger.sub_logger("sub_logger")
     sub_logger_dir = os.path.join(
         parent_dir,
         get_filename(parent_dir, "sub_logger", timestamp=timestamp.astimezone()),
     )
+    sub_logger_1 = logger.sub_logger("sub_logger")
     assert not os.path.exists(sub_logger_dir)
     with freeze_time(timestamp):
-        sub_logger.log_dict("dict", {})
+        sub_logger_1.directory  # pylint: disable=pointless-statement
     assert os.path.exists(sub_logger_dir)
+    sub_logger_2 = logger.sub_logger("sub_logger")
+    with freeze_time(timestamp):
+        sub_logger_2.directory  # pylint: disable=pointless-statement
+    assert sub_logger_1.directory != sub_logger_2.directory
 
 
 def test_root_logger_directory(root_logger: Logger) -> None:
@@ -82,22 +108,26 @@ def test_root_logger_directory(root_logger: Logger) -> None:
     assert root_logger.directory == "dir"
 
 
-def test_sub_logger_directory(logger: Logger, timestamp: datetime) -> None:
+def test_sub_logger_no_timestamp_directory(logger: Logger) -> None:
+    """A sub-Logger with no timestamp can return its directory."""
+    sub_logger = logger.sub_logger("sub_logger", timestamp=False)
+    assert sub_logger.directory == os.path.join(logger.directory, "sub_logger")
+
+
+def test_sub_logger_timestamp_directory(logger: Logger, timestamp: datetime) -> None:
     """
-    A sub-Logger can return its directory and continues to use that same directory name
-    to generate future logs.
+    A sub-Logger with a timestamp can return its directory and continues to use that
+    same directory name.
     """
     parent_dir = logger.directory
-    sub_logger = logger.sub_logger("sub_logger")
     sub_logger_dir = os.path.join(
         parent_dir,
         get_filename(parent_dir, "sub_logger", timestamp=timestamp.astimezone()),
     )
+    sub_logger = logger.sub_logger("sub_logger")
     with freeze_time(timestamp):
         assert sub_logger.directory == sub_logger_dir
-    assert not os.path.exists(sub_logger_dir)
-    sub_logger.log_dict("dict", {})
-    assert os.path.exists(sub_logger_dir)
+    assert sub_logger.directory == sub_logger_dir  # Continues to use the same directory
 
 
 def test_file_path(logger: Logger) -> None:

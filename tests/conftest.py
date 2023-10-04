@@ -124,7 +124,7 @@ def fixture_root_logger(cd_tempdir: None) -> Logger:
 @pytest.fixture(name="sub_logger")
 def fixture_sub_logger(root_logger: Logger) -> Logger:
     """Sub-logger object."""
-    return root_logger.sub_logger("sub_logger")
+    return root_logger.sub_logger("sub_logger", timestamp=False)
 
 
 @pytest.fixture(name="sub_sub_logger")
