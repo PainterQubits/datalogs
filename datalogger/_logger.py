@@ -1,9 +1,11 @@
-"""Data logging classes."""
+"""Data logging class."""
 
 from __future__ import annotations
-from typing import TypeVar, Any, overload
+from typing import TypeVar, Generic, Any, overload, get_type_hints, get_origin
 from collections.abc import Callable, Sequence, Collection, Mapping
 import os
+import sys
+from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from datalogger._variables import Coord, DataVar
 from datalogger._logs import LogMetadata, DataLog, DictLog
@@ -17,13 +19,30 @@ except ImportError:
     PARAMDB_INSTALLED = False
 
 
-# Log type variable
-_LT = TypeVar("_LT", DataLog, DictLog)
+_T = TypeVar("_T")  # Any type variable
+_LT = TypeVar("_LT", DataLog, DictLog)  # Log type variable
 
 
 def _now() -> datetime:
     """Return the current time as a ``datetime`` object in the current timezone."""
     return datetime.now(timezone.utc).astimezone()
+
+
+class LoggedProp(Generic[_T], ABC):
+    """
+    Used as a type hint to indicate that properties of a class should be logged by
+    :py:meth:`Logger.log_props`.
+
+    Note that this class is only meant to be used as a type hint, not instantiated.
+    """
+
+    @abstractmethod
+    def __get__(self, instance: Any | None, owner: Any | None = None) -> _T:
+        ...
+
+    @abstractmethod
+    def __set__(self, instance: Any, value: _T) -> None:
+        ...
 
 
 class Logger:
@@ -196,22 +215,6 @@ class Logger:
 
         return self._log(make_log, description, commit_id)
 
-    def log_dict(
-        self, description: str, dict_data: dict[str, Any], commit_id: int | None = None
-    ) -> DictLog:
-        """
-        Save the given dictionary data and corresponding metadata in a JSON file, and
-        return a :py:class:`DictLog` with this data and metadata.
-
-        The log will be tagged with the given commit ID, or the latest commit ID if none
-        is given (and if this Logger has a corresponding ParamDB).
-        """
-
-        def make_log(log_metadata: LogMetadata) -> DictLog:
-            return DictLog(log_metadata, dict_data)
-
-        return self._log(make_log, description, commit_id)
-
     @classmethod
     def _convert_to_json(cls, obj: Any) -> Any:
         """
@@ -228,26 +231,51 @@ class Logger:
             return [cls._convert_to_json(v) for v in obj]
         return repr(obj)
 
+    def log_dict(
+        self, description: str, dict_data: dict[str, Any], commit_id: int | None = None
+    ) -> DictLog:
+        """
+        Save the given dictionary data and corresponding metadata in a JSON file, and
+        return a :py:class:`DictLog` with this data and metadata.
+
+        The log will be tagged with the given commit ID, or the latest commit ID if none
+        is given (and if this Logger has a corresponding ParamDB).
+        """
+
+        def make_log(log_metadata: LogMetadata) -> DictLog:
+            return DictLog(log_metadata, self._convert_to_json(dict_data))
+
+        return self._log(make_log, description, commit_id)
+
     def log_props(
         self, description: str, obj: Any, commit_id: int | None = None
     ) -> DictLog:
         """
         Save a dictionary of the given object's properties and corresponding metadata in
-        a JSON file, and return a :py:class:`DictLog` with this data and metadata. The
-        object must be one with properties (i.e. one that has a ``__dict__`` property).
+        a JSON file, and return a :py:class:`DictLog` with this data and metadata.
 
-        This function will attempt to convert values that are not JSON-serializable to
-        lists or dictionaries, and otherwise will convert them to string
-        representations. This is intended to save a snapshot of the current properties
-        of the given object, but makes no guarentees that all information is saved.
+        Only properties that have been marked with a :py:class:`LoggedProp` type hint at
+        the top of the class definition will be saved. For example::
+
+            class Example:
+                value: LoggedProp
+                number: LoggedProp[float]
 
         The log will be tagged with the given commit ID, or the latest commit ID if none
         is given (and if this Logger has a corresponding ParamDB).
         """
+        logged_props: dict[str, Any] = {}
+        obj_class = type(obj)
         try:
-            obj_vars = vars(obj)
-        except TypeError as exc:
-            raise TypeError(
-                f"'{type(obj).__name__}' object is not supported by log_props"
+            type_hints = get_type_hints(obj_class)
+        except Exception as exc:
+            python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+            raise RuntimeError(
+                f"cannot log properties of '{obj_class.__name__}' object because its"
+                f" class type hints are invalid in Python {python_version}"
             ) from exc
-        return self.log_dict(description, self._convert_to_json(obj_vars), commit_id)
+        for name, type_hint in type_hints.items():
+            if type_hint is LoggedProp or get_origin(type_hint) is LoggedProp:
+                if hasattr(obj, name):
+                    logged_props[name] = getattr(obj, name)
+        return self.log_dict(description, logged_props, commit_id)
