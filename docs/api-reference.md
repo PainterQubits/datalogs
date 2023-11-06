@@ -10,6 +10,7 @@ All of the following can be imported from `datalogger`.
 
 ```{eval-rst}
 .. autoclass:: Logger
+.. autoclass:: LoggedProp
 ```
 
 ## Load Log
