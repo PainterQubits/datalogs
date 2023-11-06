@@ -4,7 +4,7 @@ on: workflow_dispatch
 
 env:
   POETRY_VERSION: "1.7.0"
-  PYTHON_VERSION: "3.0"
+  PYTHON_VERSION: "3.9"
   DATALOGGER_VERSION: "0.3.0"
 
 jobs:
