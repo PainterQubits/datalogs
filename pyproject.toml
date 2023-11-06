@@ -1,8 +1,12 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "datalogger"
 version = "0.3.0"
 description = "Python package for logging data from scientific experiments."
-authors = ["Alex Hadley <alexhad6@gmail.com>"]
+authors = ["Alex Hadley <contact@alexhadley.net>"]
 license = "BSD-3-Clause"
 readme = "README.md"
 repository = "https://github.com/PainterQubits/datalogger"
@@ -47,9 +51,5 @@ good-names-rgxs = ["^[a-z][a-z0-9]?$"]
 addopts = ["--import-mode=importlib"]
 filterwarnings = [
     # See https://github.com/pydata/xarray/issues/7259
-    "ignore:numpy.ndarray size changed, may indicate binary incompatibility. Expected 16 from C header, got 96 from PyObject",
+    "ignore:numpy.ndarray size changed",
 ]
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
