@@ -1,22 +1,29 @@
 """Tests for datalogger._logger."""
 
+# pylint: disable=too-few-public-methods
+# pylint: disable=missing-class-docstring
+# pylint: disable=attribute-defined-outside-init
+
 from __future__ import annotations
-from typing import Any
+from typing import Any, Union, Optional
+from collections.abc import Callable
 import os
+import sys
 from datetime import datetime
+import numpy as np
+import pandas as pd  # type: ignore
 import xarray as xr
 import xarray.testing
 import pytest
 from freezegun import freeze_time
 from paramdb import ParamDB
 from datalogger._get_filename import get_filename
-from datalogger import Coord, DataVar, Logger
+from datalogger import Coord, DataVar, LoggedProp, Logger
+
+PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 
 
-# pylint: disable-next=too-few-public-methods
 class Obj:
-    """Class for creating objects in the following tests."""
-
     def __repr__(self) -> str:
         return "<Obj>"
 
@@ -155,10 +162,69 @@ def test_log_data(
     xarray.testing.assert_identical(data_log.data, xarray_data)
 
 
-def test_log_dict_not_dict_fails(logger: Logger) -> None:
+@pytest.mark.parametrize(
+    "obj,expected_converted",
+    [
+        ("test", "test"),
+        (123, 123),
+        (1.23, 1.23),
+        (True, True),
+        ([1, 2, 3], [1, 2, 3]),
+        ((1, 2, 3), [1, 2, 3]),
+        ({1, 2, 3}, [1, 2, 3]),
+        ({"p1": 123, "p2": 456}, {"p1": 123, "p2": 456}),
+        ({"p1": [(1, Obj()), 2]}, {"p1": [[1, "<Obj>"], 2]}),
+        (
+            {(1, 2): 1, 12: 2, 1.2: 3, None: 4, False: 5},
+            {"(1, 2)": 1, "12": 2, "1.2": 3, "None": 4, "False": 5},
+        ),
+        (Obj(), "<Obj>"),
+        (np.int32(123), 123),
+        (np.float64(1.23), 1.23),
+        (np.array(123), 123),
+        (np.array(1.23), 1.23),
+        (
+            pd.DataFrame({"col1": [1, 2], "col2": [3, 4]}),
+            {"col1": {"0": 1, "1": 2}, "col2": {"0": 3, "1": 4}},
+        ),
+    ],
+)
+def test_convert_to_json(obj: Any, expected_converted: Any) -> None:
+    """A logger can convert a given object to a JSON-serializable object."""
+    converted = Logger.convert_to_json(obj)
+    assert converted == expected_converted
+    assert type(converted) is type(expected_converted)
+
+
+@pytest.mark.parametrize(
+    "obj,convert,expected_converted",
+    [
+        ("test", lambda obj: 123, 123),
+        (123, lambda obj: obj * 2, 246),
+        ((1, 2, 3), lambda obj: obj + 1 if isinstance(obj, int) else obj, [2, 3, 4]),
+        (
+            {"p1": 1, "p2": Obj()},
+            lambda obj: "Obj()" if isinstance(obj, Obj) else obj,
+            {"p1": 1, "p2": "Obj()"},
+        ),
+    ],
+)
+def test_convert_to_json_convert(
+    obj: Any, convert: Callable[[Any], Any] | None, expected_converted: Any
+) -> None:
+    """
+    A logger can use a convert function to convert a given object to a JSON-serializable
+    object.
+    """
+    converted = Logger.convert_to_json(obj, convert)
+    assert converted == expected_converted
+    assert type(converted) is type(expected_converted)
+
+
+def test_log_dict_not_dict_fails(root_logger: Logger) -> None:
     """A logger fails to save a dict log when a non-dict object is passed."""
     with pytest.raises(TypeError) as exc_info:
-        logger.log_dict("test_dict", 123)  # type: ignore
+        root_logger.log_dict("test_dict", 123)  # type: ignore
     assert str(exc_info.value) == "'int' data given for dict log 'test_dict'"
 
 
@@ -178,21 +244,86 @@ def test_log_dict(
     assert dict_log.data == dict_data
 
 
-def test_log_props_unsupported_fails(logger: Logger) -> None:
-    """
-    A logger fails to save an object property log when an unsupported object is passed
-    (one without a ``__dict__`` property).
-    """
-    with pytest.raises(TypeError) as exc_info:
-        logger.log_props("test_props", 123)
-    assert str(exc_info.value) == "'int' object is not supported by log_props"
+@pytest.mark.parametrize(
+    "dict_data,expected_converted",
+    [
+        ({"p1": 123, "p2": 456}, {"p1": 123, "p2": 456}),
+        ({"p1": [(1, Obj()), 2]}, {"p1": [[1, "<Obj>"], 2]}),
+        (
+            {(1, 2): 1, 12: 2, 1.2: 3, None: 4, False: 5},
+            {"(1, 2)": 1, "12": 2, "1.2": 3, "None": 4, "False": 5},
+        ),
+    ],
+)
+def test_log_dict_convert_to_json(
+    root_logger: Logger, dict_data: dict[Any, Any], expected_converted: Any
+) -> None:
+    """A logger converts data to JSON before storing in a dict_log."""
+    dict_log = root_logger.log_dict("test_dict", dict_data)
+    assert dict_log.data == expected_converted
 
 
-def test_log_props_basic(logger: Logger, timestamp: datetime) -> None:
+@pytest.mark.parametrize(
+    "dict_data,convert,expected_converted",
+    [
+        (
+            {"p1": 123, "p2": 456},
+            lambda obj: obj + 1 if isinstance(obj, int) else obj,
+            {"p1": 124, "p2": 457},
+        ),
+        (
+            {"p1": [(1, Obj()), 2]},
+            lambda obj: "Obj()" if isinstance(obj, Obj) else obj,
+            {"p1": [[1, "Obj()"], 2]},
+        ),
+    ],
+)
+def test_log_dict_convert_to_json_convert(
+    root_logger: Logger,
+    dict_data: dict[Any, Any],
+    convert: Callable[[Any], Any] | None,
+    expected_converted: Any,
+) -> None:
+    """
+    A logger can use a convert function to convert data to JSON before storing in a
+    dict_log.
+    """
+    dict_log = root_logger.log_dict("test_dict", dict_data, convert=convert)
+    assert dict_log.data == expected_converted
+
+
+if PYTHON_VERSION == "3.9":
+
+    def test_python39_log_props_invalid_type_hints_fails(root_logger: Logger) -> None:
+        """
+        A logger fails to log the properties of an object whose class type hints are
+        invalid for Python 3.9.
+        """
+
+        class LogPropsObj:
+            p1: LoggedProp[int | float]
+
+        with pytest.raises(RuntimeError) as exc_info:
+            root_logger.log_props("test_props", LogPropsObj())
+        assert (
+            str(exc_info.value)
+            == "cannot log properties of 'LogPropsObj' object because its class type"
+            f" hints are invalid in Python {PYTHON_VERSION}"
+        )
+
+
+def test_log_props(logger: Logger, timestamp: datetime) -> None:
     """A logger can create and save an object property log for a basic object."""
-    obj = Obj()
-    setattr(obj, "p1", 1)
-    setattr(obj, "p2", 2)
+
+    class LogPropsObj:
+        p1: LoggedProp[int]
+        p2: bool
+        p3: LoggedProp[str]
+
+    obj = LogPropsObj()
+    obj.p1 = 123
+    obj.p2 = False
+    obj.p3 = "test"
     with freeze_time(timestamp):
         props_log = logger.log_props("test_props", obj)
     assert os.path.exists(props_log.path)
@@ -202,41 +333,115 @@ def test_log_props_basic(logger: Logger, timestamp: datetime) -> None:
     assert log_metadata.description == "test_props"
     assert log_metadata.commit_id is None
     assert log_metadata.param_db_path is None
-    assert props_log.data == {"p1": 1, "p2": 2}
+    assert props_log.data == {"p1": 123, "p3": "test"}
 
 
 @pytest.mark.parametrize(
-    "props,props_log_data",
+    "annotations,props,expected_logged",
     [
-        ({"p1": 123, "p2": 456}, {"p1": 123, "p2": 456}),
-        ({"str": "test"}, {"str": "test"}),
-        ({"int": 123}, {"int": 123}),
-        ({"float": 1.23}, {"float": 1.23}),
-        ({"bool": True}, {"bool": True}),
-        ({"list": [1, 2, 3]}, {"list": [1, 2, 3]}),
-        ({"tuple": (1, 2, 3)}, {"tuple": [1, 2, 3]}),
-        ({"dict": {"p1": 1, "p2": 2}}, {"dict": {"p1": 1, "p2": 2}}),
-        ({"nested": {"p1": [(1, 2), 3]}}, {"nested": {"p1": [[1, 2], 3]}}),
         (
-            {"nonstring_keys": {(1, 2): 1, 12: 2, 1.2: 3, None: 4, False: 5}},
-            {"nonstring_keys": {"(1, 2)": 1, "12": 2, "1.2": 3, "None": 4, "False": 5}},
+            {"p1": LoggedProp[int], "p2": bool, "p3": LoggedProp[str]},
+            {"p1": 123, "p2": False, "p3": "test"},
+            {"p1": 123, "p3": "test"},
         ),
-        ({"obj": Obj()}, {"obj": "<Obj>"}),
+        (
+            {"p1": "LoggedProp[int]", "p2": "bool", "p3": "LoggedProp[str]"},
+            {"p1": 123, "p2": False, "p3": "test"},
+            {"p1": 123, "p3": "test"},
+        ),
+        (
+            {
+                "p1": LoggedProp[Union[int, str]],
+                "p2": Optional[LoggedProp],
+                "p3": LoggedProp[Optional[str]],
+            },
+            {"p1": 123, "p2": False, "p3": None},
+            {"p1": 123, "p3": None},
+        ),
     ],
 )
-def test_log_props(
-    root_logger: Logger, props: dict[Any, Any], props_log_data: dict[str, Any]
+def test_log_props_type_hints(
+    root_logger: Logger,
+    annotations: dict[str, Any],
+    props: dict[str, Any],
+    expected_logged: dict[str, Any],
 ) -> None:
     """
-    A logger can create and save object property logs for a range of object property
-    values.
+    A logger only logs the properties of objects that are marked with a LoggedProp
+    annotation.
     """
-    obj = Obj()
+
+    class LogPropsObj:
+        __annotations__ = annotations
+
+    obj = LogPropsObj()
     for k, v in props.items():
         setattr(obj, k, v)
-    props_log = root_logger.log_props("test", obj)
-    assert os.path.exists(props_log.path)
-    assert props_log.data == props_log_data
+
+    props_log = root_logger.log_props("test_props", obj)
+    assert props_log.data == expected_logged
+
+
+@pytest.mark.parametrize(
+    "props,expected_converted",
+    [
+        ({"p1": 123, "p2": 456}, {"p1": 123, "p2": 456}),
+        ({"p1": [(1, Obj()), 2]}, {"p1": [[1, "<Obj>"], 2]}),
+    ],
+)
+def test_log_props_convert_to_json(
+    root_logger: Logger, props: dict[str, Any], expected_converted: Any
+) -> None:
+    """A logger converts properties to JSON before logging them."""
+
+    class LogPropsObj:
+        __annotations__: dict[str, Any]
+
+    obj = LogPropsObj()
+    for k, v in props.items():
+        LogPropsObj.__annotations__[k] = LoggedProp
+        setattr(obj, k, v)
+
+    props_log = root_logger.log_props("test_props", obj)
+    assert props_log.data == expected_converted
+
+
+@pytest.mark.parametrize(
+    "props,convert,expected_converted",
+    [
+        (
+            {"p1": 123, "p2": 456},
+            lambda obj: obj + 1 if isinstance(obj, int) else obj,
+            {"p1": 124, "p2": 457},
+        ),
+        (
+            {"p1": [(1, Obj()), 2]},
+            lambda obj: "Obj()" if isinstance(obj, Obj) else obj,
+            {"p1": [[1, "Obj()"], 2]},
+        ),
+    ],
+)
+def test_log_props_convert_to_json_convert(
+    root_logger: Logger,
+    props: dict[str, Any],
+    convert: Callable[[Any], Any] | None,
+    expected_converted: Any,
+) -> None:
+    """
+    A logger can use a convert function to convert properties to JSON before logging
+    them.
+    """
+
+    class LogPropsObj:
+        __annotations__: dict[str, Any]
+
+    obj = LogPropsObj()
+    for k, v in props.items():
+        LogPropsObj.__annotations__[k] = LoggedProp
+        setattr(obj, k, v)
+
+    props_log = root_logger.log_props("test_props", obj, convert=convert)
+    assert props_log.data == expected_converted
 
 
 @pytest.mark.usefixtures("cd_tempdir")

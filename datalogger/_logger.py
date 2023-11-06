@@ -39,11 +39,13 @@ class LoggedProp(Generic[_T], ABC):
     """
 
     @abstractmethod
-    def __get__(self, instance: Any | None, owner: Any | None = None) -> _T:
+    def __get__(
+        self, instance: Any | None, owner: Any | None = None
+    ) -> _T:  # pragma: no cover
         ...
 
     @abstractmethod
-    def __set__(self, instance: Any, value: _T) -> None:
+    def __set__(self, instance: Any, value: _T) -> None:  # pragma: no cover
         ...
 
 
@@ -202,6 +204,7 @@ class Logger:
         description: str,
         coords: Coord | Sequence[Coord],
         data_vars: DataVar | Sequence[DataVar],
+        *,
         commit_id: int | None = None,
     ) -> DataLog:
         """
@@ -255,6 +258,7 @@ class Logger:
         self,
         description: str,
         dict_data: dict[str, Any],
+        *,
         commit_id: int | None = None,
         convert: Callable[[Any], Any] | None = None,
     ) -> DictLog:
@@ -278,6 +282,7 @@ class Logger:
         self,
         description: str,
         obj: Any,
+        *,
         commit_id: int | None = None,
         convert: Callable[[Any], Any] | None = None,
     ) -> DictLog:
@@ -312,4 +317,6 @@ class Logger:
             if type_hint is LoggedProp or get_origin(type_hint) is LoggedProp:
                 if hasattr(obj, name):
                     logged_props[name] = getattr(obj, name)
-        return self.log_dict(description, logged_props, commit_id, convert)
+        return self.log_dict(
+            description, logged_props, commit_id=commit_id, convert=convert
+        )
