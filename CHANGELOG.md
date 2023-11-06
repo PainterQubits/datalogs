@@ -7,6 +7,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] (Nov 6 2023)
+
 ### Added
 
 - `LoggedProp` type hint to indicate class properties that should be logged by
@@ -49,7 +51,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Function `load_log()` to load log files.
 - Initial documentation website.
 
-[unreleased]: https://github.com/PainterQubits/datalogger/compare/v0.2.0...main
+[unreleased]: https://github.com/PainterQubits/datalogger/compare/v0.3.0...main
+[0.3.0]: https://github.com/PainterQubits/datalogger/releases/tag/v0.3.0
 [0.2.0]: https://github.com/PainterQubits/datalogger/releases/tag/v0.2.0
 [0.1.1]: https://github.com/PainterQubits/datalogger/releases/tag/v0.1.1
 [0.1.0]: https://github.com/PainterQubits/datalogger/releases/tag/v0.1.0
