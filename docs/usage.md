@@ -135,9 +135,10 @@ display_tree("data_logs")
 
 ### Dictionary Logs
 
-Dictionary logs store `dict` data in JSON files. The data contained in the dictionary must
-be compatible with Python's [`JSONEncoder`], and keys should be strings. We can create a
-dictionary log using {py:meth}`Logger.log_dict`.
+Dictionary logs store `dict` data in JSON files. The data stored in the dictionary log
+will be converted to JSON-serializable types according to
+{py:meth}`Logger.convert_to_json`. We can create a dictionary log using
+{py:meth}`Logger.log_dict`.
 
 ```{jupyter-execute}
 node_logger.log_dict(
@@ -156,29 +157,28 @@ display_tree("data_logs")
 
 ### Property Logs
 
-Property logs store the properties of an arbitrary object (which must have a `__dict__`
-attribute, see documentation for [`vars()`] for more information).
+Property logs automatically store the properties of an object within a dictionary log.
+Only properties marked with the type hint {py:class}`LoggedProp` will be saved. We can
+create a property log using {py:meth}`Logger.log_props`.
 
-```{warning}
-Property logs are built on top of dictionary logs, so they can only store JSON-compatible
-data. For this log type, non-string keys are converted to strings and values that are not
-JSON-compatible are converted to lists or dictionaries if possible, and if not are
-converted to strings.
-
-This means that a property log does not guarentee to store all information contained
-within a given object. Instead, it is meant to function as a quick way to create a general
-snapshot of the object. For data that must be stored and recovered exactly, use data or
-dictionary logs.
+```{note}
+{py:class}`LoggedProp` can optionally take in a type parameter representing the type of
+the variable, which is only used by code analysis tools.
 ```
 
-We can create a property log using {py:meth}`Logger.log_props`.
-
 ```{jupyter-execute}
+from typing import Optional
+from datalogger import LoggedProp
+
 class SpecNode:
+    _element: LoggedProp
+    xy_f_rf: LoggedProp[int]
+    xy_f_if: LoggedProp[Optional[int]]
+
     def __init__(self, element: str) -> None:
         self._element = element
         self.xy_f_rf = 379500822
-        self.xy_f_if = 95008227
+        self.xy_f_if = None
         self.xy_f_lo = 3700000000
 
 q1_spec_node = SpecNode("q1")

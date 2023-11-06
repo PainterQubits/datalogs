@@ -7,6 +7,20 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `LoggedProp` type hint to indicate class properties that should be logged by
+  `Logger.log_props()`.
+
+### Changed
+
+- `Logger.log_props()` only logs properties marked by the `LoggedProp` type hint in the
+  object's class.
+- `Logger.convert_to_json()` handles Numpy values and Pandas DataFrames, and takes in an
+  optional `convert()` function.
+- `Logger.log_dict()` and `Logger.log_props()` take in an optional `convert()` function to
+  pass to `Logger.convert_to_json()`.
+
 ## [0.2.0] (Oct 4 2023)
 
 ### Added
