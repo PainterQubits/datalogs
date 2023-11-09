@@ -6,6 +6,7 @@ env:
   POETRY_VERSION: "1.7.0"
   PYTHON_VERSION: "3.9"
   DATALOGGER_VERSION: "0.3.0"
+  PACKAGE_NAME: "datalogger"
 
 jobs:
   build:
@@ -38,25 +39,30 @@ jobs:
           echo '<!DOCTYPE html>
           <html>
             <body>
-              <a href="datalogger/">datalogger</a>
+              <a href="${{ env.PACKAGE_NAME }}/">${{ env.PACKAGE_NAME }}</a>
             </body>
           </html>' > _site/releases/index.html
 
-      - name: Create _site/releases/datalogger/index.html
+      - name: Create _site/releases/<package-name>/index.html
         run: |
-          mkdir _site/releases/datalogger
+          mkdir _site/releases/${{ env.PACKAGE_NAME }}
           echo '<!DOCTYPE html>
           <html>
             <body>
-              <a href="datalogger-${{ env.DATALOGGER_VERSION }}-py3-none-any.whl">
-                datalogger-${{ env.DATALOGGER_VERSION }}-py3-none-any.whl
+              <a href="${{ env.PACKAGE_NAME }}-${{ env.DATALOGGER_VERSION }}-py3-none-any.whl">
+                ${{ env.PACKAGE_NAME }}-${{ env.DATALOGGER_VERSION }}-py3-none-any.whl
               </a>
-              <a href="datalogger-${{ env.DATALOGGER_VERSION }}.tar.gz">datalogger-${{ env.DATALOGGER_VERSION }}.tar.gz</a>
+              <a href="${{ env.PACKAGE_NAME }}-${{ env.DATALOGGER_VERSION }}.tar.gz">
+                ${{ env.PACKAGE_NAME }}-${{ env.DATALOGGER_VERSION }}.tar.gz
+              </a>
             </body>
-          </html>' > _site/releases/datalogger/index.html
+          </html>' > _site/releases/${{ env.PACKAGE_NAME }}/index.html
 
-      - name: Move package files into _site/releases/datalogger
-        run: mv dist/* _site/releases/datalogger
+      - name: Create _site/latest.tar.gz
+        run: cp dist/*.tar.gz _site/latest.tar.gz
+
+      - name: Move package files into _site/releases/<package-name>
+        run: mv dist/* _site/releases/${{ env.PACKAGE_NAME }}
 
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v1
