@@ -368,7 +368,7 @@ def test_log_props_type_hints(
 ) -> None:
     """
     A logger only logs the properties of objects that are marked with a LoggedProp
-    annotation.
+    type hint annotation.
     """
 
     class LogPropsObj:
@@ -380,6 +380,28 @@ def test_log_props_type_hints(
 
     props_log = root_logger.log_props("test_props", obj)
     assert props_log.data == expected_logged
+
+
+def test_log_props_type_hint_inheritance(root_logger: Logger) -> None:
+    """
+    A logger considers type hints from parent classes when determining which properties
+    of an object to log, and child classes can override parent type hints.
+    """
+
+    class LogPropsParent:
+        p1: LoggedProp[int]
+        p2: bool
+        p3: LoggedProp[str]
+
+    class LogPropsObj(LogPropsParent):
+        p1: int  # type: ignore
+
+    obj = LogPropsObj()
+    obj.p1 = 123
+    obj.p2 = False
+    obj.p3 = "test"
+    props_log = root_logger.log_props("test_props", obj)
+    assert props_log.data == {"p3": "test"}
 
 
 @pytest.mark.parametrize(
