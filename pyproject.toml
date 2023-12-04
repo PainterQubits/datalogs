@@ -23,7 +23,7 @@ paramdb = {version = "^0.10.0", optional = true}
 paramdb = ["paramdb"]
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.6.1"
+mypy = "^1.7.1"
 flake8 = "^6.1.0"
 pylint = "^3.0.2"
 black = "^23.10.1"
