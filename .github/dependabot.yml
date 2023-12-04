@@ -3,11 +3,11 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-    target-branch: "develop"
+      interval: "monthly"
+    target-branch: "main"
 
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "weekly"
-    target-branch: "develop"
+      interval: "monthly"
+    target-branch: "main"
