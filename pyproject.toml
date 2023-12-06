@@ -37,7 +37,7 @@ myst-parser = "^2.0.0"
 furo = "^2023.9.10"
 sphinx-copybutton = "^0.5.2"
 jupyter-sphinx = "^0.4.0"
-ipykernel = "^6.26.0"
+ipykernel = "^6.27.1"
 directory-tree = "^0.0.4"
 sphinx-autobuild = "^2021.3.14"
 
