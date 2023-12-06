@@ -3,17 +3,17 @@ name: Deploy to GitHub Pages
 on: workflow_dispatch
 
 env:
-  POETRY_VERSION: "1.7.0"
+  POETRY_VERSION: "1.7.1"
   PYTHON_VERSION: "3.9"
-  DATALOGGER_VERSION: "0.3.0"
   PACKAGE_NAME: "datalogger"
+  PACKAGE_VERSION: "0.3.0"
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Poetry
         run: pipx install poetry==${{ env.POETRY_VERSION }}
@@ -49,11 +49,11 @@ jobs:
           echo '<!DOCTYPE html>
           <html>
             <body>
-              <a href="${{ env.PACKAGE_NAME }}-${{ env.DATALOGGER_VERSION }}-py3-none-any.whl">
-                ${{ env.PACKAGE_NAME }}-${{ env.DATALOGGER_VERSION }}-py3-none-any.whl
+              <a href="${{ env.PACKAGE_NAME }}-${{ env.PACKAGE_VERSION }}-py3-none-any.whl">
+                ${{ env.PACKAGE_NAME }}-${{ env.PACKAGE_VERSION }}-py3-none-any.whl
               </a>
-              <a href="${{ env.PACKAGE_NAME }}-${{ env.DATALOGGER_VERSION }}.tar.gz">
-                ${{ env.PACKAGE_NAME }}-${{ env.DATALOGGER_VERSION }}.tar.gz
+              <a href="${{ env.PACKAGE_NAME }}-${{ env.PACKAGE_VERSION }}.tar.gz">
+                ${{ env.PACKAGE_NAME }}-${{ env.PACKAGE_VERSION }}.tar.gz
               </a>
             </body>
           </html>' > _site/releases/${{ env.PACKAGE_NAME }}/index.html
@@ -65,7 +65,7 @@ jobs:
         run: mv dist/* _site/releases/${{ env.PACKAGE_NAME }}
 
       - name: Upload site artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v2
 
   deploy:
     needs: build
@@ -79,4 +79,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v3
