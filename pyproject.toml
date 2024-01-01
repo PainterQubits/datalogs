@@ -15,7 +15,7 @@ repository = "https://github.com/PainterQubits/datalogger"
 python = "^3.9"
 typing-extensions = "^4.8.0"
 numpy = "^1.26.2"
-xarray = "^2023.11.0"
+xarray = "^2023.12.0"
 netcdf4 = "^1.6.5"
 paramdb = {version = "^0.10.2", optional = true}
 
