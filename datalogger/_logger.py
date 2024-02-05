@@ -178,12 +178,13 @@ class Logger:
         ID. If no commit ID is given, the latest commit ID will be used.
         """
         if self._param_db is not None and commit_id is None:
-            latest_commit = self._param_db.latest_commit
-            if latest_commit is None:
+            try:
+                latest_commit = self._param_db.load_commit_entry()
+            except IndexError as exc:
                 raise IndexError(
                     f"cannot tag log '{description}' with most recent commit because"
                     f" ParamDB '{self._param_db.path}' is empty"
-                )
+                ) from exc
             commit_id = latest_commit.id
         log = make_log(
             LogMetadata(
