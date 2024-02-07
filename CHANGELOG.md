@@ -7,6 +7,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.1] (Feb 7 2024)
+
 ### Added
 
 - Latest source distribution (latest.tar.gz) added to Pages site.

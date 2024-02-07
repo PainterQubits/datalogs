@@ -2,9 +2,9 @@
 
 # Project information
 project = "DataLogger"
-copyright = "2023, California Institute of Technology"
+copyright = "2023–2024, California Institute of Technology"
 author = "Alex Hadley"
-release = "0.3.0"
+release = "0.3.1"
 
 # General configuration
 extensions = [
