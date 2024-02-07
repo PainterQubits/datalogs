@@ -10,6 +10,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Latest source distribution (latest.tar.gz) added to Pages site.
+- Support for ParamDB v0.11.0.
 
 ## [0.3.0] (Nov 6 2023)
 
