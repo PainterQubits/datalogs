@@ -4,7 +4,7 @@
 project = "DataLogger"
 copyright = "2023–2024, California Institute of Technology"
 author = "Alex Hadley"
-release = "0.3.1"
+release = "0.3.2"
 
 # General configuration
 extensions = [
