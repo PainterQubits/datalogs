@@ -1,9 +1,8 @@
 """Data logging class."""
 
 from __future__ import annotations
-from typing import TypeVar, Generic, Any, overload, get_type_hints, get_origin
+from typing import TypeVar, Annotated, Any, overload, get_type_hints, get_origin
 from collections.abc import Callable, Sequence, Collection, Mapping
-from abc import ABC, abstractmethod
 import os
 import sys
 from datetime import datetime, timezone
@@ -20,33 +19,19 @@ try:
 except ImportError:
     PARAMDB_INSTALLED = False
 
-
 _T = TypeVar("_T")  # Any type variable
 _LT = TypeVar("_LT", DataLog, DictLog)  # Log type variable
+
+LoggedProp = Annotated[_T, "LoggedProp"]
+"""
+Used as a type hint to indicate that properties of a class should be logged by
+:py:meth:`Logger.log_props`.
+"""
 
 
 def _now() -> datetime:
     """Return the current time as a ``datetime`` object in the current timezone."""
     return datetime.now(timezone.utc).astimezone()
-
-
-class LoggedProp(Generic[_T], ABC):
-    """
-    Used as a type hint to indicate that properties of a class should be logged by
-    :py:meth:`Logger.log_props`.
-
-    Note that this class is only meant to be used as a type hint, not instantiated.
-    """
-
-    @abstractmethod
-    def __get__(
-        self, instance: Any | None, owner: Any | None = None
-    ) -> _T:  # pragma: no cover
-        ...
-
-    @abstractmethod
-    def __set__(self, instance: Any, value: _T) -> None:  # pragma: no cover
-        ...
 
 
 class Logger:
@@ -291,8 +276,9 @@ class Logger:
         Save a dictionary of the given object's properties and corresponding metadata in
         a JSON file, and return a :py:class:`DictLog` with this data and metadata.
 
-        Only properties that have been marked with a :py:class:`LoggedProp` type hint at
-        the top of the class definition will be saved. For example::
+        Only properties that have been marked with a
+        :py:const:`~datalogger._logger.LoggedProp` type hint at the top of the class
+        definition will be saved. For example::
 
             class Example:
                 value: LoggedProp
@@ -307,7 +293,7 @@ class Logger:
         obj_class = type(obj)
         logged_props: dict[str, Any] = {}
         try:
-            type_hints = get_type_hints(obj_class)
+            type_hints = get_type_hints(obj_class, include_extras=True)
         except Exception as exc:
             python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
             raise RuntimeError(
@@ -315,7 +301,10 @@ class Logger:
                 f" class type hints are invalid in Python {python_version}"
             ) from exc
         for name, type_hint in type_hints.items():
-            if type_hint is LoggedProp or get_origin(type_hint) is LoggedProp:
+            if (
+                get_origin(type_hint) is Annotated
+                and type_hint.__metadata__[0] == "LoggedProp"
+            ):
                 if hasattr(obj, name):
                     logged_props[name] = getattr(obj, name)
         return self.log_dict(

@@ -158,8 +158,8 @@ display_tree("data_logs")
 ### Property Logs
 
 Property logs automatically store the properties of an object within a dictionary log.
-Only properties marked with the type hint {py:class}`LoggedProp` will be saved. We can
-create a property log using {py:meth}`Logger.log_props`.
+Only properties marked with the type hint {py:class}`~datalogger._logger.LoggedProp` will
+be saved. We can create a property log using {py:meth}`Logger.log_props`.
 
 ```{note}
 {py:class}`LoggedProp` can optionally take in a type parameter representing the type of

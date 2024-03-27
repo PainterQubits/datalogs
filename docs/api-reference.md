@@ -10,7 +10,10 @@ All of the following can be imported from `datalogger`.
 
 ```{eval-rst}
 .. autoclass:: Logger
+
+.. py:currentmodule:: datalogger._logger
 .. autoclass:: LoggedProp
+.. py:currentmodule:: datalogger
 ```
 
 ## Load Log

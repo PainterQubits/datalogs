@@ -7,6 +7,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- `LoggedProp` is now a type alias instead of a class.
+
 ## [0.3.1] (Feb 7 2024)
 
 ### Added

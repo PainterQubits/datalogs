@@ -351,12 +351,17 @@ def test_log_props(logger: Logger, timestamp: datetime) -> None:
         ),
         (
             {
-                "p1": LoggedProp[Union[int, str]],
+                "p1": LoggedProp[Union[int, str]],  # type: ignore
                 "p2": Optional[LoggedProp],
-                "p3": LoggedProp[Optional[str]],
+                "p3": LoggedProp[Optional[str]],  # type: ignore
             },
             {"p1": 123, "p2": False, "p3": None},
             {"p1": 123, "p3": None},
+        ),
+        (
+            {"p1": LoggedProp[int], "p2": bool, "p3": LoggedProp[str]},
+            {"p2": False, "p3": "test"},
+            {"p3": "test"},
         ),
     ],
 )
@@ -394,7 +399,7 @@ def test_log_props_type_hint_inheritance(root_logger: Logger) -> None:
         p3: LoggedProp[str]
 
     class LogPropsObj(LogPropsParent):
-        p1: int  # type: ignore
+        p1: int
 
     obj = LogPropsObj()
     obj.p1 = 123
