@@ -4,7 +4,7 @@
 project = "DataLogs"
 copyright = "2023–2024, California Institute of Technology"
 author = "Alex Hadley"
-release = "0.3.2"
+release = "0.4.0"
 
 # General configuration
 extensions = [

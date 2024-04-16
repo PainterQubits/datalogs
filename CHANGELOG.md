@@ -7,6 +7,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] (Apr 16 2024)
+
 ### Changed
 
 - Rename package from `datalogger` to `datalogs` (since datalogger was taken on PyPI).
@@ -68,7 +70,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Function `load_log()` to load log files.
 - Initial documentation website.
 
-[unreleased]: https://github.com/PainterQubits/datalogs/compare/v0.3.2...main
+[unreleased]: https://github.com/PainterQubits/datalogs/compare/v0.4.0...main
+[0.4.0]: https://github.com/PainterQubits/datalogs/releases/tag/v0.4.0
 [0.3.2]: https://github.com/PainterQubits/datalogs/releases/tag/v0.3.2
 [0.3.1]: https://github.com/PainterQubits/datalogs/releases/tag/v0.3.1
 [0.3.0]: https://github.com/PainterQubits/datalogs/releases/tag/v0.3.0
