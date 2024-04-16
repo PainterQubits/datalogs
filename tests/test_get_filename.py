@@ -1,10 +1,10 @@
-"""Tests for datalogger._get_filename."""
+"""Tests for datalogs._get_filename."""
 
 from __future__ import annotations
 import os
 from datetime import datetime
 import pytest
-from datalogger._get_filename import get_filename
+from datalogs._get_filename import get_filename
 
 
 def new_file(path: str) -> None:

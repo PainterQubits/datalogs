@@ -1,9 +1,9 @@
-"""Tests for datalogger._variables."""
+"""Tests for datalogs._variables."""
 
 from __future__ import annotations
 from numpy.testing import assert_array_equal
 import xarray as xr
-from datalogger import Coord, DataVar
+from datalogs import Coord, DataVar
 
 
 def test_coord_name(coord: Coord) -> None:

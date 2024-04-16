@@ -1,4 +1,4 @@
-# DataLogger
+# DataLogs
 
 <!-- start introduction -->
 
@@ -10,17 +10,17 @@ Python package for logging data from scientific experiments.
 
 <!-- start installation -->
 
-Install the latest version of DataLogger using pip:
+Install the latest version of DataLogs using pip:
 
 ```
-pip install -U datalogger --extra-index-url https://painterqubits.github.io/datalogger/releases
+pip install -U datalogs --extra-index-url https://painterqubits.github.io/datalogs/releases
 ```
 
 To install along with [ParamDB] for support for tagging logs with the latest commit ID,
-DataLogger can be installed with the `paramdb` extra:
+DataLogs can be installed with the `paramdb` extra:
 
 ```
-pip install -U "datalogger[paramdb]" --extra-index-url https://painterqubits.github.io/datalogger/releases
+pip install -U "datalogs[paramdb]" --extra-index-url https://painterqubits.github.io/datalogs/releases
 ```
 
 [ParamDB]: https://paramdb.readthedocs.io/en/stable/

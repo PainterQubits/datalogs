@@ -1,6 +1,6 @@
 # Usage
 
-```{py:currentmodule} datalogger
+```{py:currentmodule} datalogs
 
 ```
 
@@ -19,13 +19,12 @@ os.chdir(tmp_dir.name)
 
 ## Background
 
-DataLogger is Python package to log array and dictionary data from scientific
-experiments. These logs are stored in files (netCDF for array data and JSON for
-dictionary data). The log files are organized within a nested directory structure and
-tagged with metadata, such as timestamp or optionally a commit ID from a [ParamDB]
-database.
+DataLogs is Python package to log array and dictionary data from scientific experiments.
+These logs are stored in files (netCDF for array data and JSON for dictionary data). The
+log files are organized within a nested directory structure and tagged with metadata, such
+as timestamp or optionally a commit ID from a [ParamDB] database.
 
-The original purpose of DataLogger was to store logs from graph calibration experiments,
+The original purpose of DataLogs was to store logs from graph calibration experiments,
 where directories correspond to nodes in a graph, so the examples below are based on this
 application. However, the core functionality is very general.
 
@@ -38,7 +37,7 @@ To log data, we first have to create a root {py:class}`Logger` object, passing t
 does not exist.
 
 ```{jupyter-execute}
-from datalogger import Logger
+from datalogs import Logger
 
 root_logger = Logger("data_logs")
 ```
@@ -107,12 +106,12 @@ To learn more about Xarray data, see [Data Structures] in the Xarray user guide.
 ```
 
 To aid in creating [`xarray.Dataset`] objects and to enforce certain conventions,
-DataLogger provides {py:class}`Coord` as a wrapper for an Xarray coordinate and
+DataLogs provides {py:class}`Coord` as a wrapper for an Xarray coordinate and
 {py:class}`DataVar` as a wrapper for a Xarray data variable. We can create a data log
 using these objects and {py:meth}`Logger.log_data`.
 
 ```{jupyter-execute}
-from datalogger import Coord, DataVar
+from datalogs import Coord, DataVar
 
 times = [1, 2, 3]
 signal = [10, 20, 30]
@@ -158,7 +157,7 @@ display_tree("data_logs")
 ### Property Logs
 
 Property logs automatically store the properties of an object within a dictionary log.
-Only properties marked with the type hint {py:class}`~datalogger._logger.LoggedProp` will
+Only properties marked with the type hint {py:class}`~datalogs._logger.LoggedProp` will
 be saved. We can create a property log using {py:meth}`Logger.log_props`.
 
 ```{note}
@@ -168,7 +167,7 @@ the variable, which is only used by code analysis tools.
 
 ```{jupyter-execute}
 from typing import Optional
-from datalogger import LoggedProp
+from datalogs import LoggedProp
 
 class SpecNode:
     _element: LoggedProp
@@ -201,7 +200,7 @@ Logs can be loaded by passing a file path to {py:func}`load_log`. We can also us
 also be passed in directly if known.)
 
 ```{jupyter-execute}
-from datalogger import load_log
+from datalogs import load_log
 
 q1_spec_signal_log = load_log(node_logger.file_path("q1_spec_signal.nc"))
 q1_spec_frequency_log = load_log(node_logger.file_path("q1_spec_frequency.json"))
@@ -214,7 +213,7 @@ already infers the log type from the file extension, but is useful for static ty
 checking when the log type is known.
 
 ```{jupyter-execute}
-from datalogger import DataLog, DictLog
+from datalogs import DataLog, DictLog
 
 q1_spec_signal_log = DataLog.load(node_logger.file_path("q1_spec_signal.nc"))
 q1_spec_frequency_log = DictLog.load(node_logger.file_path("q1_spec_frequency.json"))

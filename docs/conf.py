@@ -1,7 +1,7 @@
 # See https://www.sphinx-doc.org/en/master/usage/configuration.html for all options
 
 # Project information
-project = "DataLogger"
+project = "DataLogs"
 copyright = "2023–2024, California Institute of Technology"
 author = "Alex Hadley"
 release = "0.3.2"

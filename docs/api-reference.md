@@ -1,19 +1,19 @@
 # API Reference
 
-```{py:currentmodule} datalogger
+```{py:currentmodule} datalogs
 
 ```
 
-All of the following can be imported from `datalogger`.
+All of the following can be imported from `datalogs`.
 
 ## Logger
 
 ```{eval-rst}
 .. autoclass:: Logger
 
-.. py:currentmodule:: datalogger._logger
+.. py:currentmodule:: datalogs._logger
 .. autoclass:: LoggedProp
-.. py:currentmodule:: datalogger
+.. py:currentmodule:: datalogs
 ```
 
 ## Load Log

@@ -8,9 +8,9 @@ import sys
 from datetime import datetime, timezone
 import numpy as np
 import pandas as pd  # type: ignore
-from datalogger._variables import Coord, DataVar
-from datalogger._logs import LogMetadata, DataLog, DictLog
-from datalogger._get_filename import get_filename
+from datalogs._variables import Coord, DataVar
+from datalogs._logs import LogMetadata, DataLog, DictLog
+from datalogs._get_filename import get_filename
 
 try:
     from paramdb import ParamDB
@@ -277,7 +277,7 @@ class Logger:
         a JSON file, and return a :py:class:`DictLog` with this data and metadata.
 
         Only properties that have been marked with a
-        :py:const:`~datalogger._logger.LoggedProp` type hint at the top of the class
+        :py:const:`~datalogs._logger.LoggedProp` type hint at the top of the class
         definition will be saved. For example::
 
             class Example:

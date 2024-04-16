@@ -1,10 +1,10 @@
-"""Tests for datalogger._load_log."""
+"""Tests for datalogs._load_log."""
 
 from __future__ import annotations
 from typing import Any
 import xarray.testing
 import pytest
-from datalogger import Logger, Coord, DataVar, DataLog, DictLog, load_log
+from datalogs import Logger, Coord, DataVar, DataLog, DictLog, load_log
 
 
 @pytest.mark.usefixtures("cd_tempdir")

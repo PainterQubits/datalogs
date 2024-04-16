@@ -1,4 +1,4 @@
-# DataLogger
+# DataLogs
 
 ```{include} ../README.md
 :start-after: <!-- start introduction -->

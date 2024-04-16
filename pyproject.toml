@@ -3,13 +3,13 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "datalogger"
+name = "datalogs"
 version = "0.3.2"
 description = "Python package for logging data from scientific experiments."
 authors = ["Alex Hadley <contact@alexhadley.net>"]
 license = "BSD-3-Clause"
 readme = "README.md"
-repository = "https://github.com/PainterQubits/datalogger"
+repository = "https://github.com/PainterQubits/datalogs"
 
 [tool.poetry.dependencies]
 python = "^3.9"

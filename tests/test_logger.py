@@ -1,4 +1,4 @@
-"""Tests for datalogger._logger."""
+"""Tests for datalogs._logger."""
 
 # pylint: disable=too-few-public-methods
 # pylint: disable=missing-class-docstring
@@ -17,8 +17,8 @@ import xarray.testing
 import pytest
 from freezegun import freeze_time
 from paramdb import ParamDB
-from datalogger._get_filename import get_filename
-from datalogger import Coord, DataVar, LoggedProp, Logger
+from datalogs._get_filename import get_filename
+from datalogs import Coord, DataVar, LoggedProp, Logger
 
 PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
 

@@ -1,4 +1,4 @@
-"""Tests for datalogger._logs."""
+"""Tests for datalogs._logs."""
 
 from __future__ import annotations
 from typing import Any
@@ -10,7 +10,7 @@ from textwrap import indent
 import xarray as xr
 import xarray.testing
 import pytest
-from datalogger import Coord, DataVar, LogMetadata, DataLog, DictLog
+from datalogs import Coord, DataVar, LogMetadata, DataLog, DictLog
 
 
 def test_log_metadata_properties(

@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 import xarray as xr
 import pytest
 from paramdb import ParamDB
-from datalogger import Coord, DataVar, LogMetadata, DataLog, DictLog, Logger
+from datalogs import Coord, DataVar, LogMetadata, DataLog, DictLog, Logger
 
 
 @pytest.fixture(name="cd_tempdir")

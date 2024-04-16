@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import os
-from datalogger._logs import DataLog, DictLog
+from datalogs._logs import DataLog, DictLog
 
 
 def load_log(path: str) -> DataLog | DictLog:
