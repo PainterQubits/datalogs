@@ -29,6 +29,6 @@ DataLogs can be installed with the `paramdb` extra:
 pip install -U "datalogs[paramdb]"
 ```
 
-[ParamDB]: https://paramdb.readthedocs.io/en/stable/
+[ParamDB]: https://paramdb.readthedocs.io
 
 <!-- end installation -->
