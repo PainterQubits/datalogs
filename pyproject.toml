@@ -13,32 +13,32 @@ repository = "https://github.com/PainterQubits/datalogs"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-typing-extensions = "^4.11.0"
+typing-extensions = "^4.12.2"
 numpy = "^1.26.4"
-xarray = "^2024.3.0"
-netcdf4 = "^1.6.5"
-paramdb = { version = "^0.11.0", optional = true }
+xarray = "^2024.7.0"
+netcdf4 = "^1.7.1.post2"
+paramdb = { version = "^0.15.2", optional = true }
 
 [tool.poetry.extras]
 paramdb = ["paramdb"]
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.9.0"
-flake8 = "^7.0.0"
-pylint = "^3.1.0"
-black = "^24.4.0"
-pytest = "^8.1.1"
+mypy = "^1.11.1"
+flake8 = "^7.1.1"
+pylint = "^3.2.6"
+black = "^24.8.0"
+pytest = "^8.3.2"
 pytest-cov = "^5.0.0"
-freezegun = "^1.4.0"
+freezegun = "^1.5.1"
 
 [tool.poetry.group.docs.dependencies]
-sphinx = "^7.2.6"
-myst-parser = "^2.0.0"
-furo = "^2024.1.29"
+sphinx = "7.4.7"
+myst-parser = "3.0.0"
+furo = "^2024.8.6"
 sphinx-copybutton = "^0.5.2"
 jupyter-sphinx = "^0.5.3"
-ipykernel = "^6.29.4"
-directory-tree = "^0.0.4"
+ipykernel = "^6.29.5"
+directory-tree = "^1.0.0"
 sphinx-autobuild = "^2024.4.16"
 
 [tool.mypy]
