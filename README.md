@@ -6,7 +6,7 @@
 [![PyPI Python Versions](https://img.shields.io/pypi/pyversions/datalogs)](https://pypi.org/project/datalogs/)
 [![License](https://img.shields.io/pypi/l/paramdb)](https://github.com/PainterQubits/datalogs/blob/main/LICENSE)
 [![CI](https://github.com/PainterQubits/datalogs/actions/workflows/ci.yml/badge.svg)](https://github.com/PainterQubits/datalogs/actions/workflows/ci.yml)
-[![Documentation Status](https://readthedocs.org/projects/datalogs/badge/?version=latest)](https://datalogs.readthedocs.io)
+[![Documentation Status](https://readthedocs.org/projects/datalogs/badge/?version=stable)](https://datalogs.readthedocs.io/en/stable/)
 
 Python package for logging data from scientific experiments.
 
@@ -29,6 +29,6 @@ DataLogs can be installed with the `paramdb` extra:
 pip install -U "datalogs[paramdb]"
 ```
 
-[ParamDB]: https://paramdb.readthedocs.io
+[ParamDB]: https://paramdb.readthedocs.io/en/stable/
 
 <!-- end installation -->
