@@ -11,7 +11,7 @@
 
 import os
 from tempfile import TemporaryDirectory
-from directory_tree import display_tree
+from directory_tree import DisplayTree
 
 tmp_dir = TemporaryDirectory()
 os.chdir(tmp_dir.name)
@@ -47,7 +47,7 @@ Our current working directory now contains a directory called `data_logs`.
 ```{jupyter-execute}
 :hide-code:
 
-display_tree("data_logs")
+DisplayTree("data_logs")
 ```
 
 ```{tip}
@@ -79,7 +79,7 @@ directories are not created yet.
 ```{jupyter-execute}
 :hide-code:
 
-display_tree("data_logs")
+DisplayTree("data_logs")
 ```
 
 ```{important}
@@ -129,7 +129,7 @@ file.
 ```{jupyter-execute}
 :hide-code:
 
-display_tree("data_logs")
+DisplayTree("data_logs")
 ```
 
 ### Dictionary Logs
@@ -151,7 +151,7 @@ The log file has now been created within the node directory.
 ```{jupyter-execute}
 :hide-code:
 
-display_tree("data_logs")
+DisplayTree("data_logs")
 ```
 
 ### Property Logs
@@ -190,7 +190,7 @@ The log file has now been created within the node directory.
 ```{jupyter-execute}
 :hide-code:
 
-display_tree("data_logs")
+DisplayTree("data_logs")
 ```
 
 ## Loading

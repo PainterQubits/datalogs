@@ -7,6 +7,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Add view, edit, and GitHub links to documentation website.
+
 ## [0.5.0] (Aug 24 2024)
 
 - Public release of DataLogs.
