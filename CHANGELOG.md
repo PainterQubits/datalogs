@@ -7,6 +7,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.1] (Aug 24 2024)
+
 - Add view, edit, and GitHub links to documentation website.
 
 ## [0.5.0] (Aug 24 2024)
@@ -76,7 +78,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Function `load_log()` to load log files.
 - Initial documentation website.
 
-[unreleased]: https://github.com/PainterQubits/datalogs/compare/v0.4.0...main
+[unreleased]: https://github.com/PainterQubits/datalogs/compare/v0.5.1...main
+[0.5.1]: https://github.com/PainterQubits/datalogs/releases/tag/v0.5.1
+[0.5.0]: https://github.com/PainterQubits/datalogs/releases/tag/v0.5.0
 [0.4.0]: https://github.com/PainterQubits/datalogs/releases/tag/v0.4.0
 [0.3.2]: https://github.com/PainterQubits/datalogs/releases/tag/v0.3.2
 [0.3.1]: https://github.com/PainterQubits/datalogs/releases/tag/v0.3.1

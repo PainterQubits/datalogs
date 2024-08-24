@@ -4,6 +4,6 @@ authors:
   - family-names: "Hadley"
     given-names: "Alex"
 title: "DataLogs"
-version: 0.5.0
+version: 0.5.1
 date-released: 2024-08-24
 url: "https://github.com/PainterQubits/datalogs"
