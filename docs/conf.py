@@ -18,6 +18,13 @@ extensions = [
 # HTML output options
 html_theme = "furo"
 html_static_path = ["_static"]
+html_context = {
+    "display_github": True,
+    "github_user": "PainterQubits",
+    "github_repo": "datalogs",
+    "github_version": "main",
+    "conf_py_path": "docs",
+}
 html_theme_options = {
     "source_repository": "https://github.com/PainterQubits/datalogs",
     "source_branch": "main",
