@@ -6,7 +6,7 @@ copyright = "2023–2024, California Institute of Technology"
 author = "Alex Hadley"
 release = "0.5.0"
 
-# General configuration
+# Extensions
 extensions = [
     "myst_parser",
     "sphinx.ext.autodoc",
@@ -18,6 +18,11 @@ extensions = [
 # HTML output options
 html_theme = "furo"
 html_static_path = ["_static"]
+html_theme_options = {
+    "source_repository": "https://github.com/PainterQubits/datalogs",
+    "source_branch": "main",
+    "source_directory": "docs",
+}
 
 # MyST options
 myst_heading_anchors = 3
