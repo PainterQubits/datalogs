@@ -18,11 +18,17 @@ extensions = [
 # HTML output options
 html_theme = "furo"
 html_static_path = ["_static"]
-html_theme_options = {
-    "source_repository": "https://github.com/PainterQubits/datalogs",
-    # "source_branch": "main",
-    # "source_directory": "docs",
+html_context = {
+  "display_github": True,
+  "github_user": "PainterQubits",
+  "github_repo": "datalogs",
+  "github_version": "main/docs/",
 }
+# html_theme_options = {
+#     "source_repository": "https://github.com/PainterQubits/datalogs",
+#     "source_branch": "main",
+#     "source_directory": "docs",
+# }
 
 # MyST options
 myst_heading_anchors = 3
