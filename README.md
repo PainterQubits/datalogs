@@ -4,7 +4,7 @@
 
 [![PyPI Latest Release](https://img.shields.io/pypi/v/datalogs)](https://pypi.org/project/datalogs/)
 [![PyPI Python Versions](https://img.shields.io/pypi/pyversions/datalogs)](https://pypi.org/project/datalogs/)
-[![License](https://img.shields.io/pypi/l/paramdb)](https://github.com/PainterQubits/datalogs/blob/main/LICENSE)
+[![License](https://img.shields.io/pypi/l/datalogs)](https://github.com/PainterQubits/datalogs/blob/main/LICENSE)
 [![CI](https://github.com/PainterQubits/datalogs/actions/workflows/ci.yml/badge.svg)](https://github.com/PainterQubits/datalogs/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/datalogs/badge/?version=stable)](https://datalogs.readthedocs.io/en/stable/)
 
