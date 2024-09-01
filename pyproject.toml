@@ -14,7 +14,7 @@ repository = "https://github.com/PainterQubits/datalogs"
 [tool.poetry.dependencies]
 python = "^3.9"
 typing-extensions = "^4.12.2"
-numpy = "^1.26.4"
+numpy = ">=1.26.4,<3.0.0"
 xarray = "^2024.7.0"
 netcdf4 = "^1.7.1.post2"
 paramdb = { version = "^0.15.2", optional = true }
